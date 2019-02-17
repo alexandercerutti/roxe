@@ -15,7 +15,7 @@ interface SubjectLike {
 	unsubscribe(): void;
 }
 
-export default class ObservableObject<T>{
+export default class ObservableObject<T> {
 	@nonEnumerable
 	private _observedObjects: Observed = {};
 
@@ -65,11 +65,8 @@ export default class ObservableObject<T>{
 			}
 		};
 
-		return Object.assign(
-			Object.create(ObservableObject.prototype),
-			buildInitialProxyChain(from, handlers),
-			this
-		);
+		// return Object.assign(this, buildInitialProxyChain(from, handlers));
+		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
 	}
 
 	/**
