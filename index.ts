@@ -57,7 +57,7 @@ class _ObservableObject<T> {
 					obj[prop] = value;
 
 					// "x.y.z" as string if we have some
-					propPath = args.length ? [...args, prop].join(".") : prop;
+					propPath = args.length && args[0].length ? [...args[0], prop].join(".") : prop;
 				}
 
 				// We want both single properties an complex objects to be notified when edited
@@ -69,7 +69,6 @@ class _ObservableObject<T> {
 			}
 		};
 
-		// return Object.assign(this, buildInitialProxyChain(from, handlers));
 		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
 	}
 
@@ -135,7 +134,7 @@ interface AnyKindOfObject {
  * @param handlers
  */
 
-function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, ...args: string[]): ProxyConstructor {
+function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, ...args: any[]): ProxyConstructor {
 	let chain: AnyKindOfObject = {};
 	for (const prop in sourceObject) {
 		if (typeof sourceObject[prop] === "object" && !Array.isArray(sourceObject[prop])) {
