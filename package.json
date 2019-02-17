@@ -1,0 +1,22 @@
+{
+  "name": "proxy-observer",
+  "version": "1.0.0",
+  "description": "Observe object changes through proxies",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "Javascript",
+    "Typescript",
+    "Observe"
+  ],
+  "author": "Alexander P. Cerutti <cerutti.alexander@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "rxjs": "^6.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^3.3.3"
+  }
+}
