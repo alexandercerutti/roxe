@@ -3,6 +3,10 @@ import { Subject, PartialObserver, Subscription } from "rxjs";
 const ref = Symbol("ref");
 const count = Symbol("count");
 
+interface ObservableConstructor {
+	new<T>(from: T): _ObservableObject<T> & T;
+}
+
 interface Observed {
 	[key: string]: {
 		[count]: number,
@@ -15,7 +19,7 @@ interface SubjectLike {
 	unsubscribe(): void;
 }
 
-export default class ObservableObject<T> {
+class _ObservableObject<T> {
 	@nonEnumerable
 	private _observedObjects: Observed = {};
 
@@ -83,17 +87,15 @@ export default class ObservableObject<T> {
 
 	observe(prop: string): SubjectLike {
 		if (!this._observedObjects[prop]) {
-			this._observedObjects = {
-				[prop]: Object.create(null, {
-					[ref]: {
-						value: new Subject(),
-					},
-					[count]: {
-						value: 0,
-						writable: true
-					}
-				})
-			};
+			this._observedObjects[prop] = Object.create(null, {
+				[ref]: {
+					value: new Subject(),
+				},
+				[count]: {
+					value: 0,
+					writable: true
+				}
+			});
 		}
 
 		return {
@@ -118,6 +120,10 @@ export default class ObservableObject<T> {
 		}
 	}
 }
+
+// Workaround to allow us to recognize T's props as part of ObservableObject
+// https://stackoverflow.com/a/54737176/2929433
+export const ObservableObject: ObservableConstructor = _ObservableObject as any;
 
 interface AnyKindOfObject {
 	[key: string]: any;
