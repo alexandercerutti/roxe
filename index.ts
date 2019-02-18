@@ -23,10 +23,19 @@ class _ObservableObject<T> {
 	@nonEnumerable
 	private _observedObjects: Observed = {};
 
-	constructor(from: T) {
-		const handlers = {
+	constructor(from: T, optHandlers?: ProxyHandler<any>) {
+		let afterSet: (obj: any, prop: string, value: any, receiver?: any) => boolean;
+
+		if (optHandlers) {
+			if (optHandlers.set) {
+				afterSet = optHandlers.set;
+				delete optHandlers.set;
+			}
+		}
+
+		const handlers = Object.assign(optHandlers || {}, {
 			// Note for future: leave receiver as parameter even if not used
-			// To keep args as the last and not include receiver in this one
+			// to keep args as the last and not include receiver in this one
 			set: (obj: any, prop: string, value: any, receiver?: any, ...args: any[]): boolean => {
 				let propPath = prop;
 				if (typeof value === "object" && !Array.isArray(value)) {
@@ -65,9 +74,13 @@ class _ObservableObject<T> {
 					this._observedObjects[propPath][ref].next(value);
 				}
 
+				if (afterSet) {
+					return afterSet(obj, prop, value, receiver);
+				}
+
 				return true;
 			}
-		};
+		});
 
 		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
 	}
