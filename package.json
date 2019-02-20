@@ -10,10 +10,11 @@
   "keywords": [
     "Javascript",
     "Typescript",
-    "Observe"
+    "Observe",
+    "rxjs"
   ],
   "author": "Alexander P. Cerutti <cerutti.alexander@gmail.com>",
-  "license": "ISC",
+  "license": "GNU GPLv3",
   "dependencies": {
     "rxjs": "^6.4.0"
   },
