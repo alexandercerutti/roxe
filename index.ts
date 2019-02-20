@@ -37,42 +37,59 @@ class _ObservableObject<T> {
 			// Note for future: leave receiver as parameter even if not used
 			// to keep args as the last and not include receiver in this one
 			set: (obj: any, prop: string, value: any, receiver?: any, ...args: any[]): boolean => {
-				let propPath = prop;
+				let notificationChain: AnyKindOfObject;
 				if (typeof value === "object" && !Array.isArray(value)) {
-					// We when we set a property which will be an object
-					// we set it as a Proxy and pass it
-					// an edited SETTER with binded trailing keys to reach this property
+					// Creating the chain of properties that will be notified
+					notificationChain = Object.assign({
+						[prop]: value,
+					}, flattifyValue(obj[prop], prop));
 
-					// E.g. if we have and object structure like x.y.z.w
-					// x, x.y and x.y.z will be Proxies; each property will receive
-					// a setter with the parent key.
-					// w property will receive as args ["x", "y", "z"];
-
+					/*
+					 * We when we set a property which will be an object
+					 * we set it as a Proxy and pass it
+					 * an edited SETTER with binded trailing keys to reach
+					 * this property.
+					 * E.g. if we have and object structure like x.y.z.w
+					 * x, x.y and x.y.z will be Proxies; each property
+					 * will receive a setter with the parent keys.
+					 * w property, will receive below (in else),
+					 * ["x", "y", "z"] as args.
+					 */
 					obj[prop] = new Proxy(value, {
 						set: bindLast(handlers.set, [...args, prop])
 					});
 				} else {
-					// We create the path of the keys passed in the above condition
-					// to reach “object endpoint” (like "w" for the prev. example)
-					// The path keys composition, let us subscribe to observables
-					// with dot notation like x.y.z.w
+					/*
+					 * We finalize the path of the keys passed in the above condition
+					 * to reach “object endpoint” (like "w" for the prev. example)
+					 * The path keys composition, let us subscribe to observables
+					 * with dot notation like x.y.z.w
+					 */
 
 					if (obj[prop] === value) {
-						// If the value is the same, this cannot be considered as a fail
-						// trap to return a false value - we'd get a TypeError if in strict-mode
+						/*
+						 * If the value is the same, we return true.
+						 * This cannot be considered as a fail. Also, failing would bring
+						 * a strict-mode script to throw a TypeError.
+						 */
 						return true;
 					}
 
 					obj[prop] = value;
 
-					// "x.y.z" as string if we have some
-					propPath = args.length && args[0].length ? [...args[0], prop].join(".") : prop;
+					const elementKey = args.length && args[0].length ? [...args[0], prop].join(".") : prop;
+					notificationChain = {
+						[elementKey] : value
+					};
 				}
 
-				// We want both single properties an complex objects to be notified when edited
-				if (this._observedObjects[propPath]) {
-					this._observedObjects[propPath][ref].next(value);
-				}
+				Object.keys(notificationChain).forEach((keyPath) => {
+					const value = notificationChain[keyPath];
+					// We want both single properties an complex objects to be notified when edited
+					if (this._observedObjects[keyPath]) {
+						this._observedObjects[keyPath][ref].next(value);
+					}
+				});
 
 				if (afterSet) {
 					return afterSet(obj, prop, value, receiver);
@@ -160,6 +177,29 @@ function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHa
 	}
 
 	return new Proxy(chain, handlers);
+}
+
+/**
+ * Builds the chain of properties that will be notified.
+ * This is used when a property that is or will be
+ * an object, is assigned.
+ * The function will compose an object { "x.y.z": value }
+ * for each key of each nested object.
+ * @param source - Current object
+ * @param args
+ */
+
+function flattifyValue(source: AnyKindOfObject, ...args: string[]): AnyKindOfObject {
+	let chain: AnyKindOfObject = {};
+	for (const prop in source) {
+		chain[[...args, prop].join(".")] = source[prop];
+
+		if (typeof source[prop] === "object" && !Array.isArray(source[prop])) {
+			Object.assign(chain, flattifyValue(source[prop], ...args, prop))
+		}
+	}
+
+	return chain;
 }
 
 /**
