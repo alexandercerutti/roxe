@@ -110,7 +110,7 @@ class _ObservableObject<T> {
 	 */
 
 	observe(prop: string): Subject<any> {
-		if (!this._observedObjects[prop]) {
+		if (!this._observedObjects[prop] || this._observedObjects[prop].closed) {
 			this._observedObjects[prop] = new Subject();
 		}
 
