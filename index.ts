@@ -1,22 +1,17 @@
 import { Subject, PartialObserver, Subscription } from "rxjs";
-
-const ref = Symbol("ref");
-const count = Symbol("count");
+import { share } from "rxjs/operators";
 
 interface ObservableConstructor {
 	new<T>(from: T): _ObservableObject<T> & T;
 }
 
 interface Observed {
-	[key: string]: {
-		[count]: number,
-		[ref]: Subject<any>
-	}
+	[key: string]: Subject<any>;
 }
 
 interface SubjectLike {
-	subscribe(observer: PartialObserver<any>): void;
-	unsubscribe(): void;
+	subscribe(observer: PartialObserver<any>): Subscription;
+	unsubscribe?(): void;
 }
 
 class _ObservableObject<T> {
@@ -42,7 +37,7 @@ class _ObservableObject<T> {
 					// Creating the chain of properties that will be notified
 					notificationChain = Object.assign({
 						[prop]: value,
-					}, flattifyValue(obj[prop], prop));
+					}, flattifyValue(value, prop));
 
 					/*
 					 * We when we set a property which will be an object
@@ -87,7 +82,7 @@ class _ObservableObject<T> {
 					const value = notificationChain[keyPath];
 					// We want both single properties an complex objects to be notified when edited
 					if (this._observedObjects[keyPath]) {
-						this._observedObjects[keyPath][ref].next(value);
+						this._observedObjects[keyPath].next(value);
 					}
 				});
 
@@ -114,37 +109,17 @@ class _ObservableObject<T> {
 	 * 		or `time.current`)
 	 */
 
-	observe(prop: string): SubjectLike {
+	observe(prop: string): Subject<any> {
 		if (!this._observedObjects[prop]) {
-			this._observedObjects[prop] = Object.create(null, {
-				[ref]: {
-					value: new Subject(),
-				},
-				[count]: {
-					value: 0,
-					writable: true
-				}
-			});
+			this._observedObjects[prop] = new Subject();
 		}
 
-		return {
-			subscribe: (observer: PartialObserver<any>): Subscription => {
-				this._observedObjects[prop][count]++;
-				return this._observedObjects[prop][ref].subscribe(observer);
-			},
-			unsubscribe: (): void => {
-				this._observedObjects[prop][ref].unsubscribe();
-
-				if (--this._observedObjects[prop][count] === 0) {
-					delete this._observedObjects[prop];
-				}
-			}
-		}
+		return this._observedObjects[prop];
 	}
 
 	unsubscribeAll(): void {
 		for (const prop in this._observedObjects) {
-			this._observedObjects[prop][ref].unsubscribe();
+			this._observedObjects[prop].unsubscribe();
 			delete this._observedObjects[prop];
 		}
 	}
