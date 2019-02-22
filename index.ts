@@ -109,9 +109,9 @@ class _ObservableObject<T> {
 	 * 		or `time.current`)
 	 */
 
-	observe(prop: string): Subject<any> {
-		if (!this._observedObjects[prop] || this._observedObjects[prop].closed) {
-			this._observedObjects[prop] = new Subject();
+	observe<T = any>(prop: string): Subject<T> {
+		if (!this._observedObjects[prop] || this._observedObjects[prop].closed || this._observedObjects[prop].isStopped) {
+			this._observedObjects[prop] = new Subject<T>();
 		}
 
 		return this._observedObjects[prop];
