@@ -11,7 +11,8 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "experimentalDecorators": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "sourceMap": true
   },
   "exclude": [
     "./node_modules/"
