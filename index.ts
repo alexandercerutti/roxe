@@ -1,17 +1,21 @@
-import { Subject, PartialObserver, Subscription } from "rxjs";
-import { share } from "rxjs/operators";
+import { Subject, PartialObserver, Subscription, OperatorFunction, Observable } from "rxjs";
+
+const ref = Symbol("ref");
+const subscriptions = Symbol("sub");
 
 interface ObservableConstructor {
 	new<T>(from: T): _ObservableObject<T> & T;
 }
 
 interface Observed {
-	[key: string]: Subject<any>;
+	[key: string]: {
+		[ref]: Subject<any>;
+		[subscriptions]: Array<Subscription>
+	}
 }
 
-interface SubjectLike {
-	subscribe(observer: PartialObserver<any>): Subscription;
-	unsubscribe?(): void;
+interface SubscriptionFunnel<T> {
+	subscribe(observer: PartialObserver<T>): void;
 }
 
 class _ObservableObject<T> {
@@ -82,7 +86,7 @@ class _ObservableObject<T> {
 					const value = notificationChain[keyPath];
 					// We want both single properties an complex objects to be notified when edited
 					if (this._observedObjects[keyPath]) {
-						this._observedObjects[keyPath].next(value);
+						this._observedObjects[keyPath][ref].next(value);
 					}
 				});
 
@@ -109,19 +113,53 @@ class _ObservableObject<T> {
 	 * 		or `time.current`)
 	 */
 
-	observe<T = any>(prop: string): Subject<T> {
-		if (!this._observedObjects[prop] || this._observedObjects[prop].closed || this._observedObjects[prop].isStopped) {
-			this._observedObjects[prop] = new Subject<T>();
+	observe<A = any>(prop: string): SubscriptionFunnel<A> {
+		if (!this._observedObjects[prop]) {
+			this._observedObjects[prop] = {
+				[ref]: new Subject<A>(),
+				[subscriptions]: []
+			};
 		}
 
-		return this._observedObjects[prop];
+		return Object.assign(this, {
+			subscribe: (observer: PartialObserver<A>, ...operators: OperatorFunction<any, any>[]): void => {
+				let sub: Subscription;
+				if (operators.length) {
+					// We have to use reduce since rxjs typings does not include `.pipe(...operators)`;
+					sub = operators.reduce((previous: Subject<any> | Observable<any>, current) => {
+						return previous.pipe(current);
+					}, this._observedObjects[prop][ref])
+						.subscribe(observer);
+				} else {
+					sub = this._observedObjects[prop][ref].subscribe(observer);
+				}
+
+				this._observedObjects[prop][subscriptions].push(sub);
+			}
+		});
+	}
+
+	dispose(prop: string): boolean {
+		if (!this._observedObjects[prop]) {
+			return false;
+		}
+
+		this.removeSubscriptions(prop);
+		this._observedObjects[prop][ref].unsubscribe();
+		delete this._observedObjects[prop];
+		return true;
 	}
 
 	unsubscribeAll(): void {
 		for (const prop in this._observedObjects) {
-			this._observedObjects[prop].unsubscribe();
-			delete this._observedObjects[prop];
+			this.dispose(prop);
 		}
+	}
+
+	removeSubscriptions(prop: string): void {
+		this._observedObjects[prop][subscriptions].forEach(sub => {
+			sub.unsubscribe();
+		});
 	}
 }
 
