@@ -1,22 +1,15 @@
-import { PartialObserver, Subject } from "rxjs";
+import { PartialObserver, Subject, OperatorFunction, Subscription } from "rxjs";
 
-declare module "proxy-observer" {
+declare module "rexursive-observer" {
 	class ObservableObject<T> {
-		private _observedObjects: Observed;
 		new (from: T): T & ObservableObject<T>;
-		observe?(): SubjectLike;
-		unsubscribeAll?(): void;
+		observe<A = any>(): SubscriptionFunnel<A>;
+		unsubscribeAll(): void;
+		dispose(prop: string): void;
+		removeSubscriptions(prop: string): void;
 	}
 
-	interface SubjectLike {
-		subscribe(observer: PartialObserver<any>): void;
-		unsubscribe(): void;
-	}
-
-	interface Observed {
-		[key: string]: {
-			count: number,
-			ref: Subject<any>
-		}
+	interface SubscriptionFunnel<T> {
+		subscribe(observer: PartialObserver<any>, ...operators: OperatorFunction<any, any>[]): void;
 	}
 }
