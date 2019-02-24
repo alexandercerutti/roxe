@@ -14,7 +14,7 @@
     "rxjs"
   ],
   "author": "Alexander P. Cerutti <cerutti.alexander@gmail.com>",
-  "license": "GNU GPLv3",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "rxjs": "^6.4.0"
   },
