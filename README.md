@@ -1,33 +1,23 @@
 # Rexursive-Observer
 
-<br>
-
-___
-### Architecture
-___
-
 This is a small utility to observe changes to complex objects.
 As Javascript devs know, native `observe` and `watch` methods were suffering of poor performance and were deprecated. Proxies then were created as a partial solution. Also RxJS implements greatly the Observable Pattern.
 
 So I took them and merged them: _**R**e**x**ursive-observer_
 The result is a typescript package that let you `subscribe` to objects and nested objects in a very easy way.
 
-<br>
 
-___
 ### Install
-___
 
 ```sh
 $ npm install --save rexursive-observer
 ```
 
 <br>
-<br>
+<hr>
 
-___
-### Usage
-___
+### Usage example
+
 
 In this usage example, I'm supposing you are using Typescript to show you the real advantage of this package.
 
@@ -85,9 +75,9 @@ nestedObjects.secondProperty = {
 <br>
 
 ___
-### Documentation 📃
+
+## Documentation
 ___
-<br>
 
 **constructor()**
 
@@ -97,6 +87,7 @@ new ObservableObject(from);
 ```
 
 **Arguments**:
+
 | Key | Type | Description |
 |-----|:----:|-------------|
 | obj | T    | The object you want to observe |
@@ -132,6 +123,7 @@ See below for more details.
 <br>
 
 **Arguments**:
+
 | Key  | Type | Description |
 |------|:----:|-------------|
 | prop |string| The key-path to identify the property, or object, to observe. |
@@ -156,6 +148,7 @@ It accepts a `PartialObserver<T>` and a series of parameters, `operators` to be 
 <br>
 
 **Arguments**:
+
 | Key  | Type | Description |
 |------|:----:|-------------|
 | observer |[PartialObserver<T>](https://rxjs.dev/api/index/type-alias/PartialObserver)| Actions to be executed on changes |
@@ -179,6 +172,7 @@ Removed from the internal index the subject and unsubscribes from it (or "closes
 <br>
 
 **Arguments**:
+
 | Key  | Type | Description |
 |------|:----:|-------------|
 | prop |string| The key-path to identify the property, or object, to dispose |
@@ -216,6 +210,7 @@ Removes all the subcriptions from a specific property Subject.
 <br>
 
 **Arguments**:
+
 | Key  | Type | Description |
 |------|:----:|-------------|
 | prop |string| The key-path to identify the property, or object, to which Subscriptions have to be removed |
@@ -231,6 +226,7 @@ This small package is a fork of a package, created by me, while working at [Idea
 
 <br>
 <br>
+
 ___
 
 Made with ❤ in Italy.
