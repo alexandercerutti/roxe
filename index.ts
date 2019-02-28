@@ -1,7 +1,4 @@
-import { Subject, PartialObserver, Subscription, OperatorFunction, Observable, Subscriber } from "rxjs";
-
-const ref = Symbol("ref");
-const subscriptions = Symbol("sub");
+import { Subject, Subscription } from "rxjs";
 
 interface ObservableConstructor {
 	new<T>(from: T): _ObservableObject<T> & T;
