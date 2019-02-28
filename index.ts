@@ -1,4 +1,4 @@
-import { Subject, PartialObserver, Subscription, OperatorFunction, Observable } from "rxjs";
+import { Subject, PartialObserver, Subscription, OperatorFunction, Observable, Subscriber } from "rxjs";
 
 const ref = Symbol("ref");
 const subscriptions = Symbol("sub");
@@ -8,31 +8,34 @@ interface ObservableConstructor {
 }
 
 interface Observed {
-	[key: string]: {
-		[ref]: Subject<any>;
-		[subscriptions]: Array<Subscription>
-	}
+	[key: string]: Subject<any>
 }
 
-interface SubscriptionFunnel<T> {
-	subscribe(observer: PartialObserver<T>): void;
+/**
+ * A Subject that will memorize its subscribers
+ * And remove them on unsubscribe.
+ * Unsubscription will not close or stop the Subject itself.
+ */
+
+class ReusableSubject<T> extends Subject<T> {
+	unsubscribe() {
+		this.observers = [];
+	}
 }
 
 class _ObservableObject<T> {
 	@nonEnumerable
 	private _observedObjects: Observed = {};
 
-	constructor(from: T, optHandlers?: ProxyHandler<any>) {
+	constructor(from: T, optHandlers: ProxyHandler<any> = {}) {
 		let afterSet: (obj: any, prop: string, value: any, receiver?: any) => boolean;
 
-		if (optHandlers) {
-			if (optHandlers.set) {
-				afterSet = optHandlers.set;
-				delete optHandlers.set;
-			}
+		if (optHandlers && optHandlers.set) {
+			afterSet = optHandlers.set;
+			delete optHandlers.set;
 		}
 
-		const handlers = Object.assign(optHandlers || {}, {
+		const handlers = Object.assign(optHandlers, {
 			// Note for future: leave receiver as parameter even if not used
 			// to keep args as the last and not include receiver in this one
 			set: (obj: any, prop: string, value: any, receiver?: any, ...args: any[]): boolean => {
@@ -41,7 +44,7 @@ class _ObservableObject<T> {
 					// Creating the chain of properties that will be notified
 					notificationChain = Object.assign({
 						[prop]: value,
-					}, flattifyValue(value, prop));
+					}, buildNotificationChain(value, prop));
 
 					/*
 					 * We when we set a property which will be an object
@@ -86,7 +89,7 @@ class _ObservableObject<T> {
 					const value = notificationChain[keyPath];
 					// We want both single properties an complex objects to be notified when edited
 					if (this._observedObjects[keyPath]) {
-						this._observedObjects[keyPath][ref].next(value);
+						this._observedObjects[keyPath].next(value);
 					}
 				});
 
@@ -103,63 +106,22 @@ class _ObservableObject<T> {
 
 	/**
 	 * Registers a custom property to be observed.
-	 * Creates a Rx-like interface to subscribe and
-	 * unsubscribe to the Subject, but by keeping an
-	 * ARC to delete the property once all the subscribers
-	 * have unsubscribed.
 	 *
 	 * @param {string} prop - The property or object
 	 * 		property to subscribe to (e.g. `epsilon`
 	 * 		or `time.current`)
 	 */
 
-	observe<A = any>(prop: string): SubscriptionFunnel<A> {
-		if (!this._observedObjects[prop]) {
-			this._observedObjects[prop] = {
-				[ref]: new Subject<A>(),
-				[subscriptions]: []
-			};
+	observe<A = any>(prop: string): Subject<A> {
+		if (!this._observedObjects[prop] || this._observedObjects[prop].isStopped || this._observedObjects[prop].closed) {
+			this._observedObjects[prop] = new ReusableSubject<A>();
 		}
 
-		return Object.assign(this, {
-			subscribe: (observer: PartialObserver<A>, ...operators: OperatorFunction<any, any>[]): void => {
-				let sub: Subscription;
-				if (operators.length) {
-					// We have to use reduce since rxjs typings does not include `.pipe(...operators)`;
-					sub = operators.reduce((previous: Subject<any> | Observable<any>, current) => {
-						return previous.pipe(current);
-					}, this._observedObjects[prop][ref])
-						.subscribe(observer);
-				} else {
-					sub = this._observedObjects[prop][ref].subscribe(observer);
-				}
-
-				this._observedObjects[prop][subscriptions].push(sub);
-			}
-		});
+		return this._observedObjects[prop];
 	}
 
-	dispose(prop: string): boolean {
-		if (!this._observedObjects[prop]) {
-			return false;
-		}
-
-		this.removeSubscriptions(prop);
-		this._observedObjects[prop][ref].unsubscribe();
-		delete this._observedObjects[prop];
-		return true;
-	}
-
-	unsubscribeAll(): void {
-		for (const prop in this._observedObjects) {
-			this.dispose(prop);
-		}
-	}
-
-	removeSubscriptions(prop: string): void {
-		this._observedObjects[prop][subscriptions].forEach(sub => {
-			sub.unsubscribe();
-		});
+	unsubscribeAll(subscriptions: Subscription[]): void {
+		subscriptions.forEach(sub => sub.unsubscribe());
 	}
 }
 
@@ -202,13 +164,13 @@ function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHa
  * @param args
  */
 
-function flattifyValue(source: AnyKindOfObject, ...args: string[]): AnyKindOfObject {
+function buildNotificationChain(source: AnyKindOfObject, ...args: string[]): AnyKindOfObject {
 	let chain: AnyKindOfObject = {};
 	for (const prop in source) {
 		chain[[...args, prop].join(".")] = source[prop];
 
 		if (typeof source[prop] === "object" && !Array.isArray(source[prop])) {
-			Object.assign(chain, flattifyValue(source[prop], ...args, prop))
+			Object.assign(chain, buildNotificationChain(source[prop], ...args, prop))
 		}
 	}
 
