@@ -82,15 +82,16 @@ ___
 **constructor()**
 
 ```typescript
-new ObservableObject<T>(from: T): T & ObservableObject<T>;
-new ObservableObject(from);
+new ObservableObject<T>(from: T, optHandlers: ProxyHandler<any>): T & ObservableObject<T>;
+new ObservableObject(from, optHandlers);
 ```
 
 **Arguments**:
 
-| Key | Type | Description |
-|-----|:----:|-------------|
-| obj | T    | The object you want to observe |
+| Key | Type | Description | Optional | Default |
+|-----|:----:|-------------|:--------:|:-------:|
+| obj | T    | The object you want to observe | `false` | - |
+| optHandlers | ProxyHandler<any> | Other handlers through which the object changes developers may them want to pass. A set handler will be executed after the current one | `true` | `{}` |
 
 <br>
 
@@ -101,24 +102,21 @@ ___
 **.observe()**
 
 ```typescript
-observableObject.observe<T = any>(prop: string): SubscriptionFunnel<T>;
+observableObject.observe<T = any>(prop: string): Subject<T>;
 ```
 
 **Description**:
 
-Use this method to create in the internal index a Subject that will serve to emit and consume the changes. This subject won't be accessible from the outside.
-Once a Subject is created, it is "destroyed" only when `.unsubscribeAll` or `.dispose` are called.
-This design choice was made to keep using the same subjects for every subscription without creating new ones every time.
+Use this method to register a Subject to subscribe to.
+To avoid confusion between Subject `.unsubscribe` and Subscription `.unsubscribe`, the returned Subject will unsubscribe only the registered `Subscriptions` without closing/stopping the Subject, even if (I know...), Subject shouldn't be reusable.
 
-This methods accepts a generic type `T` that will be passed to the creation of the Subject and the Subscription.
+This methods accepts a generic type `T` that will be passed to the creation of the Subject.
 
 <br>
 
 **Returns**:
 
-`SubscriptionFunnel<T>`, a limited "Subscription" implementation (with only a custom rxjs' `subscribe` wrapper method) that will help into problems with unsubscriptions (as both Subjects and Subscriptions can be unsubscribed).
-This method won't return a subscription, as the real `subscribe` method.
-See below for more details.
+`Subject<T>`
 
 <br>
 
@@ -133,89 +131,15 @@ See below for more details.
 ___
 <br>
 
-
-**SubscriptionFunnel.subscribe()**
-
-```typescript
-SubscriptionFunnel.subscribe(observer: PartialObserver<T>, ...operators: OperatorFunction<any, any>[]): void;
-```
-
-**Description**:
-
-This is the real method that will notify your listners about your objects changes.
-It accepts a `PartialObserver<T>` and a series of parameters, `operators` to be passed to Observable's `pipe` method.
-
-<br>
-
-**Arguments**:
-
-| Key  | Type | Description |
-|------|:----:|-------------|
-| observer |[PartialObserver<T>](https://rxjs.dev/api/index/type-alias/PartialObserver)| Actions to be executed on changes |
-| ...operators | [OperatorFunction<any, any>[]](https://rxjs.dev/api/index/interface/OperatorFunction) | The functions to be used as "modifiers for the current subscription" |
-
-<br>
-
-___
-<br>
-
-**.dispose()**
-
-```typescript
-observableObject.dispose(prop: string): void;
-```
-
-**Description**:
-
-Removed from the internal index the subject and unsubscribes from it (or "closes" and "stops" it).
-
-<br>
-
-**Arguments**:
-
-| Key  | Type | Description |
-|------|:----:|-------------|
-| prop |string| The key-path to identify the property, or object, to dispose |
-
-<br>
-
-___
-<br>
-
 **.unsubscribeAll()**
 
 ```typescript
-observableObject.unsubscribeAll(): void;
+observableObject.unsubscribeAll(subscriptions: Subscription[]): void;
 ```
 
 **Description**:
-Disposes and unsubscribe all the subjects.
+Performs unbscription on all the passed `Subscription`;
 
-
-<br>
-
-___
-<br>
-
-**.removeSubscriptions()**
-
-```typescript
-observableObject.removeSubscriptions(prop: string): void;
-```
-
-**Description**:
-
-Removes all the subcriptions from a specific property Subject.
-
-<br>
-
-**Arguments**:
-
-| Key  | Type | Description |
-|------|:----:|-------------|
-| prop |string| The key-path to identify the property, or object, to which Subscriptions have to be removed |
-
-<br>
 <br>
 <br>
 
