@@ -1,15 +1,21 @@
 import { Subject, Subscription } from "rxjs";
 
+export type ObservableObjectType<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
-	new<T>(from: T): _ObservableObject<T> & T;
+	new<T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObjectType<T>;
 }
 
 interface Observed {
 	[key: string]: Subject<any>
 }
 
+
+interface AnyKindOfObject {
+	[key: string]: any;
+}
+
 /**
- * A Subject that will memorize its subscribers
+ * A Subject that will only memorize its subscribers
  * And remove them on unsubscribe.
  * Unsubscription will not close or stop the Subject itself.
  */
@@ -48,7 +54,7 @@ class _ObservableObject<T> {
 					 * we set it as a Proxy and pass it
 					 * an edited SETTER with binded trailing keys to reach
 					 * this property.
-					 * E.g. if we have and object structure like x.y.z.w
+					 * E.g. if we have an object structure like x.y.z.w
 					 * x, x.y and x.y.z will be Proxies; each property
 					 * will receive a setter with the parent keys.
 					 * w property, will receive below (in else),
@@ -125,10 +131,6 @@ class _ObservableObject<T> {
 // Workaround to allow us to recognize T's props as part of ObservableObject
 // https://stackoverflow.com/a/54737176/2929433
 export const ObservableObject: ObservableConstructor = _ObservableObject as any;
-
-interface AnyKindOfObject {
-	[key: string]: any;
-}
 
 /**
  * Builds the initial object-proxy composed of proxies objects
