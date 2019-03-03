@@ -1,16 +1,17 @@
-# Rexursive-Observer
+# Rexo
 
-This is a small utility to observe changes to complex objects.
-As Javascript devs know, native `observe` and `watch` methods were suffering of poor performance and were deprecated. Proxies then were created as a partial solution. Also RxJS implements greatly the Observable Pattern.
+This is a small utility to observe changes to complex objects, designed with the mind oriented to apps/scripts with multiple files that need to listen for changes from others.
+In fact, this works perfectly when we work in React-like environments.
+As Javascript devs know, native `observe` and `watch` methods were deprecated, probably for bad performance. Proxies then were created as a partial solution. RxJS implements greatly the Observable Pattern.
 
-So I took them and merged them: _**R**e**x**ursive-observer_
+So I took them and merged them together: **Rexo** (_Rexursive-observer_ (Recursive + Rx))
 The result is a typescript package that let you `subscribe` to objects and nested objects in a very easy way.
 
 
 ### Install
 
 ```sh
-$ npm install --save rexursive-observer
+$ npm install --save rexo
 ```
 
 <br>

@@ -1,5 +1,5 @@
 {
-  "name": "rexursive-observer",
+  "name": "rexo",
   "version": "1.0.0",
   "description": "Observe object changes through proxies",
   "main": "index.js",
