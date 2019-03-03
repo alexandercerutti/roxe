@@ -1,15 +1,16 @@
-import { PartialObserver, Subject, OperatorFunction, Subscription } from "rxjs";
+import { Subject } from "rxjs";
 
 declare module "rexursive-observer" {
-	class ObservableObject<T> {
-		new (from: T): T & ObservableObject<T>;
-		observe<A = any>(): SubscriptionFunnel<A>;
-		unsubscribeAll(): void;
-		dispose(prop: string): void;
-		removeSubscriptions(prop: string): void;
-	}
+	const ObservableObject: ObservableConstructor;
+	type O2Type<T> = _ObservableObject<T> & T;
 
-	interface SubscriptionFunnel<T> {
-		subscribe(observer: PartialObserver<any>, ...operators: OperatorFunction<any, any>[]): void;
+	type ObservableConstructor = {
+		new<T>(from: T, optHandlers?: ProxyHandler<any>): _ObservableObject<T> & T;
 	}
+}
+
+declare class _ObservableObject<T> {
+	new (from: T): T & _ObservableObject<T>;
+	observe<A = any>(): Subject<A>;
+	unsubscribeAll(): void;
 }
