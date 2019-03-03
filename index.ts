@@ -87,6 +87,10 @@ class _ObservableObject<T> {
 					};
 				}
 
+				if (afterSet) {
+					return afterSet(obj, prop, value, receiver);
+				}
+
 				Object.keys(notificationChain).forEach((keyPath) => {
 					const value = notificationChain[keyPath];
 					// We want both single properties an complex objects to be notified when edited
@@ -94,10 +98,6 @@ class _ObservableObject<T> {
 						this._observedObjects[keyPath].next(value);
 					}
 				});
-
-				if (afterSet) {
-					return afterSet(obj, prop, value, receiver);
-				}
 
 				return true;
 			}
