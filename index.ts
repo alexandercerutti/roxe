@@ -88,7 +88,11 @@ class _ObservableObject<T> {
 				}
 
 				if (afterSet) {
-					return afterSet(obj, prop, value, receiver);
+					let afterSetResult = afterSet(obj, prop, value, receiver);
+
+					if (afterSetResult === false) {
+						return afterSetResult;
+					}
 				}
 
 				Object.keys(notificationChain).forEach((keyPath) => {

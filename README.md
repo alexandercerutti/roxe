@@ -92,7 +92,7 @@ new ObservableObject(from, optHandlers);
 | Key | Type | Description | Optional | Default |
 |-----|:----:|-------------|:--------:|:-------:|
 | obj | T    | The object you want to observe | `true` | `{}` |
-| optHandlers | ProxyHandler<any> | Other handlers through which the object changes developers may them want to pass. A set handler will be executed after the current one | `true` | `{}` |
+| optHandlers | ProxyHandler<any> | Other handlers through which the object changes developers may them want to pass. A set handler will be executed before the notification will happen, within the current one. If a set handler will return `false`, it will stop the execution and won't notify for the changes | `true` | `{}` |
 
 <br>
 
