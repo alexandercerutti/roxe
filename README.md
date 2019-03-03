@@ -83,7 +83,7 @@ ___
 **constructor()**
 
 ```typescript
-new ObservableObject<T>(from: T, optHandlers: ProxyHandler<any>): T & ObservableObject<T>;
+new ObservableObject<T>(from?: T, optHandlers?: ProxyHandler<any>): T & ObservableObject<T>;
 new ObservableObject(from, optHandlers);
 ```
 
@@ -91,7 +91,7 @@ new ObservableObject(from, optHandlers);
 
 | Key | Type | Description | Optional | Default |
 |-----|:----:|-------------|:--------:|:-------:|
-| obj | T    | The object you want to observe | `false` | - |
+| obj | T    | The object you want to observe | `true` | `{}` |
 | optHandlers | ProxyHandler<any> | Other handlers through which the object changes developers may them want to pass. A set handler will be executed after the current one | `true` | `{}` |
 
 <br>

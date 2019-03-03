@@ -9,7 +9,6 @@ interface Observed {
 	[key: string]: Subject<any>
 }
 
-
 interface AnyKindOfObject {
 	[key: string]: any;
 }
@@ -30,7 +29,7 @@ class _ObservableObject<T> {
 	@nonEnumerable
 	private _observedObjects: Observed = {};
 
-	constructor(from: T, optHandlers: ProxyHandler<any> = {}) {
+	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
 		let afterSet: (obj: any, prop: string, value: any, receiver?: any) => boolean;
 
 		if (optHandlers && optHandlers.set) {
