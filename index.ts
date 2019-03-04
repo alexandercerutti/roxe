@@ -31,10 +31,17 @@ class _ObservableObject<T> {
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
 		let afterSet: (obj: any, prop: string, value: any, receiver?: any) => boolean;
+		let getHandler: (obj: any, prop: string | number | symbol, receiver?: any) => any;
 
-		if (optHandlers && optHandlers.set) {
-			afterSet = optHandlers.set;
-			delete optHandlers.set;
+		if (optHandlers) {
+			if (optHandlers.set) {
+				afterSet = optHandlers.set;
+				delete optHandlers.set;
+			}
+
+			if (optHandlers.get) {
+				getHandler = optHandlers.get;
+			}
 		}
 
 		const handlers = Object.assign(optHandlers, {
@@ -104,6 +111,13 @@ class _ObservableObject<T> {
 				});
 
 				return true;
+			},
+			get(target: any, prop: string | number) {
+				if (getHandler && !(prop in _ObservableObject.prototype) && prop !== "_observedObjects") {
+					getHandler(target, prop);
+				}
+
+				return target[prop];
 			}
 		});
 
