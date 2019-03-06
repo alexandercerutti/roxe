@@ -1,4 +1,5 @@
 import { Subject, Subscription, noop } from "rxjs";
+import { observedObjects } from "./observedObjectsSymbol";
 
 export type ObservableObjectType<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
@@ -27,11 +28,11 @@ class ReusableSubject<T> extends Subject<T> {
 
 class _ObservableObject<T> {
 	@nonEnumerable
-	private _observedObjects: Observed = {};
+	private [observedObjects]: Observed = {};
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
-		let afterSet: (obj: any, prop: string, value: any, receiver?: any) => boolean = noopWrapper();
-		let getHandler: (obj: any, prop: string | number | symbol, receiver?: any) => any = noopWrapper();
+		let afterSet: ((obj: any, prop: string, value: any, receiver?: any) => boolean) | undefined;
+		let getHandler: ((obj: any, prop: string | number | symbol, receiver?: any) => any) | undefined;
 
 		if (optHandlers) {
 			if (optHandlers.set) {
@@ -68,7 +69,7 @@ class _ObservableObject<T> {
 					 */
 					obj[prop] = new Proxy(value, {
 						set: bindLast(handlers.set, [...args, prop]),
-						get: bindLast(handlers.get, getHandler)
+						get: handlers.get
 					});
 				} else {
 					/*
@@ -106,20 +107,20 @@ class _ObservableObject<T> {
 				Object.keys(notificationChain).forEach((keyPath) => {
 					const value = notificationChain[keyPath];
 					// We want both single properties an complex objects to be notified when edited
-					if (this._observedObjects[keyPath]) {
-						this._observedObjects[keyPath].next(value);
+					if (this[observedObjects][keyPath]) {
+						this[observedObjects][keyPath].next(value);
 					}
 				});
 
 				return true;
 			},
-			get(target: any, prop: string | number | symbol, receiver: any, customGetter: (target: any, prop: string | number | symbol, receiver?: any) => any) {
-				if (customGetter && !(prop in _ObservableObject.prototype) && prop !== "_observedObjects") {
+			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: typeof getHandler) => {
+				if (customGetter !== undefined && !(prop in _ObservableObject.prototype)) {
 					return customGetter(target, prop, receiver);
 				}
 
 				return Reflect.get(target, prop, receiver);
-			}
+			}, getHandler)
 		});
 
 		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
@@ -134,11 +135,11 @@ class _ObservableObject<T> {
 	 */
 
 	observe<A = any>(prop: string): Subject<A> {
-		if (!this._observedObjects[prop] || this._observedObjects[prop].isStopped || this._observedObjects[prop].closed) {
-			this._observedObjects[prop] = new ReusableSubject<A>();
+		if (!this[observedObjects][prop]) {
+			this[observedObjects][prop] = new ReusableSubject<A>();
 		}
 
-		return this._observedObjects[prop];
+		return this[observedObjects][prop];
 	}
 
 	unsubscribeAll(subscriptions: Subscription[]): void {
@@ -219,7 +220,7 @@ function noopWrapper(...anyParameter: any[]): any {
  * @param {boolean} value - new value
  */
 
-function nonEnumerable(target: any, propertyKey: string) {
+function nonEnumerable(target: any, propertyKey: string | number | symbol) {
 	Object.defineProperty(target, propertyKey, {
 		writable: true,
 		enumerable: false
