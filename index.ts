@@ -1,4 +1,4 @@
-import { Subject, Subscription } from "rxjs";
+import { Subject, Subscription, noop } from "rxjs";
 
 export type ObservableObjectType<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
@@ -30,8 +30,8 @@ class _ObservableObject<T> {
 	private _observedObjects: Observed = {};
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
-		let afterSet: (obj: any, prop: string, value: any, receiver?: any) => boolean;
-		let getHandler: (obj: any, prop: string | number | symbol, receiver?: any) => any;
+		let afterSet: (obj: any, prop: string, value: any, receiver?: any) => boolean = noopWrapper();
+		let getHandler: (obj: any, prop: string | number | symbol, receiver?: any) => any = noopWrapper();
 
 		if (optHandlers) {
 			if (optHandlers.set) {
@@ -67,7 +67,8 @@ class _ObservableObject<T> {
 					 * ["x", "y", "z"] as args.
 					 */
 					obj[prop] = new Proxy(value, {
-						set: bindLast(handlers.set, [...args, prop])
+						set: bindLast(handlers.set, [...args, prop]),
+						get: bindLast(handlers.get, getHandler)
 					});
 				} else {
 					/*
@@ -112,12 +113,12 @@ class _ObservableObject<T> {
 
 				return true;
 			},
-			get(target: any, prop: string | number) {
-				if (getHandler && !(prop in _ObservableObject.prototype) && prop !== "_observedObjects") {
-					getHandler(target, prop);
+			get(target: any, prop: string | number | symbol, receiver: any, customGetter: (target: any, prop: string | number | symbol, receiver?: any) => any) {
+				if (customGetter && !(prop in _ObservableObject.prototype) && prop !== "_observedObjects") {
+					return customGetter(target, prop, receiver);
 				}
 
-				return target[prop];
+				return Reflect.get(target, prop, receiver);
 			}
 		});
 
@@ -159,9 +160,9 @@ function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHa
 	let chain: AnyKindOfObject = {};
 	for (const prop in sourceObject) {
 		if (typeof sourceObject[prop] === "object" && !Array.isArray(sourceObject[prop])) {
-			chain[prop] = buildInitialProxyChain(sourceObject[prop], {
+			chain[prop] = buildInitialProxyChain(sourceObject[prop], Object.assign(handlers, {
 				set: bindLast(handlers.set!, [...args, prop])
-			}, ...args, prop);
+			}), ...args, prop);
 		} else {
 			chain[prop] = sourceObject[prop];
 		}
@@ -206,6 +207,10 @@ function buildNotificationChain(source: AnyKindOfObject, ...args: string[]): Any
 
 function bindLast(fn: Function, ...boundArgs: any[]) {
 	return (...args: [Object, string, any, any?]) => fn(...args, ...boundArgs);
+}
+
+function noopWrapper(...anyParameter: any[]): any {
+	return noop;
 }
 
 
