@@ -1,4 +1,4 @@
-import { Subject, Subscription, noop } from "rxjs";
+import { Subject, Subscription } from "rxjs";
 import { observedObjects } from "./observedObjectsSymbol";
 
 export type ObservableObjectType<T> = _ObservableObject<T> & T;
@@ -31,17 +31,17 @@ class _ObservableObject<T> {
 	private [observedObjects]: Observed = {};
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
-		let afterSet: ((obj: any, prop: string, value: any, receiver?: any) => boolean) | undefined;
-		let getHandler: ((obj: any, prop: string | number | symbol, receiver?: any) => any) | undefined;
+		let setCustomHandler: ((obj: any, prop: string, value: any, receiver?: any) => boolean) | undefined;
+		let getCustomHandler: ((obj: any, prop: string | number | symbol, receiver?: any) => any) | undefined;
 
 		if (optHandlers) {
 			if (optHandlers.set) {
-				afterSet = optHandlers.set;
+				setCustomHandler = optHandlers.set;
 				delete optHandlers.set;
 			}
 
 			if (optHandlers.get) {
-				getHandler = optHandlers.get;
+				getCustomHandler = optHandlers.get;
 			}
 		}
 
@@ -57,11 +57,11 @@ class _ObservableObject<T> {
 					}, buildNotificationChain(value, prop));
 
 
-					if (afterSet) {
-						let afterSetResult = afterSet(obj, prop, value, receiver);
+					if (setCustomHandler) {
+						let setResult = setCustomHandler(obj, prop, value, receiver);
 
-						if (afterSetResult === false) {
-							return afterSetResult;
+						if (setResult === false) {
+							return setResult;
 						}
 					}
 					/*
@@ -95,11 +95,11 @@ class _ObservableObject<T> {
 						return true;
 					}
 
-					if (afterSet) {
-						let afterSetResult = afterSet(obj, prop, value, receiver);
+					if (setCustomHandler) {
+						let setResult = setCustomHandler(obj, prop, value, receiver);
 
-						if (afterSetResult === false) {
-							return afterSetResult;
+						if (setResult === false) {
+							return setResult;
 						}
 					}
 
@@ -121,13 +121,13 @@ class _ObservableObject<T> {
 
 				return true;
 			},
-			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: typeof getHandler) => {
+			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: typeof getCustomHandler) => {
 				if (customGetter !== undefined && !(prop in _ObservableObject.prototype)) {
 					return customGetter(target, prop, receiver);
 				}
 
 				return Reflect.get(target, prop, receiver);
-			}, getHandler)
+			}, getCustomHandler)
 		});
 
 		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
