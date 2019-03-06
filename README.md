@@ -1,6 +1,6 @@
 # Rexo
 
-This is a small utility to observe changes to complex objects, designed with the mind oriented to apps/scripts with multiple files that need to listen for changes from others.
+This is a small utility to observe changes to complex objects, designed for applications with multiple files that need to listen for changes from a common object (e.g. a State).
 In fact, this works perfectly when we work in React-like environments.
 As Javascript devs know, native `observe` and `watch` methods were deprecated, probably for bad performance. Proxies then were created as a partial solution. RxJS implements greatly the Observable Pattern.
 
@@ -91,7 +91,7 @@ new ObservableObject(from, optHandlers);
 
 | Key | Type | Description | Optional | Default |
 |-----|:----:|-------------|:--------:|:-------:|
-| obj | T    | The object you want to observe | `true` | `{}` |
+| from | T    | The object you want to observe | `true` | `{}` |
 | optHandlers | ProxyHandler<any> | Other handlers through which the object changes developers may them want to pass. A set handler will be executed before the notification will happen, within the current one. If a set handler will return `false`, it will stop the execution and won't notify for the changes | `true` | `{}` |
 
 <br>
@@ -139,10 +139,39 @@ observableObject.unsubscribeAll(subscriptions: Subscription[]): void;
 ```
 
 **Description**:
+
 Performs unbscription on all the passed `Subscription`;
 
 <br>
+___
 <br>
+
+**.snapshot()**
+
+```typescript
+observableObject.snapshot(): T;
+```
+
+**Description**:
+
+Returns the current clean object structure.
+
+<br>
+<br>
+
+___
+
+### Defining own traps
+
+This package has been built with in mind the possibility to be extended as much as possible.
+In fact, to the constructor, when creating a new observable object, custom proxy handlers are available to be passed.
+
+As v1.0.0, *getter* and *setter* are the only two handlers that are "protected": they cannot be fully overridden, but they will be attached to the integrated ones and may alter the behaviour of the current ones.
+For example, make the custom setter return false to not assign the value.
+Be sure to be in *non-strict-mode*.
+
+The default getter is there to pass you only the values related to the object you want to observe.
+All the other traps are free, but, as *setter* and *getter*, they will be applied to every nested object. So be sure to implement the appropriate checks.
 
 ___
 ### Credits ⭐
