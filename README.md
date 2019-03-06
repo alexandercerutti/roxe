@@ -174,6 +174,16 @@ The default getter is there to pass you only the values related to the object yo
 All the other traps are free, but, as *setter* and *getter*, they will be applied to every nested object. So be sure to implement the appropriate checks.
 
 ___
+### Testing
+
+Some tests based on Jasmine, are available to be executed to show how this package works.
+
+```sh
+$ npm install -D
+$ npm test
+```
+___
+___
 ### Credits ⭐
 ___
 This small package is a fork of a package, created by me, while working at [IdeaSolutions S.r.l.](http://www.ideasolutions.it/), an Italian company based in Naples, Italy. A great company to work for.
