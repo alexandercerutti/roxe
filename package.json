@@ -19,6 +19,8 @@
     "rxjs": "^6.4.0"
   },
   "devDependencies": {
+    "@types/jasmine": "^3.3.9",
+    "jasmine": "^3.3.1",
     "typescript": "^3.3.3"
   }
 }

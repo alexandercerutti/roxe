@@ -56,6 +56,14 @@ class _ObservableObject<T> {
 						[prop]: value,
 					}, buildNotificationChain(value, prop));
 
+
+					if (afterSet) {
+						let afterSetResult = afterSet(obj, prop, value, receiver);
+
+						if (afterSetResult === false) {
+							return afterSetResult;
+						}
+					}
 					/*
 					 * We when we set a property which will be an object
 					 * we set it as a Proxy and pass it
@@ -67,10 +75,9 @@ class _ObservableObject<T> {
 					 * w property, will receive below (in else),
 					 * ["x", "y", "z"] as args.
 					 */
-					obj[prop] = new Proxy(value, {
+					obj[prop] = new Proxy(value, Object.assign(handlers, {
 						set: bindLast(handlers.set, [...args, prop]),
-						get: handlers.get
-					});
+					}));
 				} else {
 					/*
 					 * We finalize the path of the keys passed in the above condition
@@ -88,20 +95,20 @@ class _ObservableObject<T> {
 						return true;
 					}
 
+					if (afterSet) {
+						let afterSetResult = afterSet(obj, prop, value, receiver);
+
+						if (afterSetResult === false) {
+							return afterSetResult;
+						}
+					}
+
 					obj[prop] = value;
 
 					const elementKey = args.length && args[0].length ? [...args[0], prop].join(".") : prop;
 					notificationChain = {
 						[elementKey] : value
 					};
-				}
-
-				if (afterSet) {
-					let afterSetResult = afterSet(obj, prop, value, receiver);
-
-					if (afterSetResult === false) {
-						return afterSetResult;
-					}
 				}
 
 				Object.keys(notificationChain).forEach((keyPath) => {
@@ -142,8 +149,21 @@ class _ObservableObject<T> {
 		return this[observedObjects][prop];
 	}
 
+	/**
+	 * Unsubscribes from all the subscriptions in a specific pool
+	 * @param subscriptions
+	 */
+
 	unsubscribeAll(subscriptions: Subscription[]): void {
 		subscriptions.forEach(sub => sub.unsubscribe());
+	}
+
+	/**
+	 * Returns the current object without proxies
+	 */
+
+	snapshot(): T {
+		return Object.assign({} as T, this);
 	}
 }
 
@@ -209,11 +229,6 @@ function buildNotificationChain(source: AnyKindOfObject, ...args: string[]): Any
 function bindLast(fn: Function, ...boundArgs: any[]) {
 	return (...args: [Object, string, any, any?]) => fn(...args, ...boundArgs);
 }
-
-function noopWrapper(...anyParameter: any[]): any {
-	return noop;
-}
-
 
 /**
  * @enumerable Decorator to initialize a property to be writable but not enumerable

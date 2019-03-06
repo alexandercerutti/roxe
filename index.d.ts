@@ -13,4 +13,5 @@ declare class _ObservableObject<T> {
 	new (from: T): T & _ObservableObject<T>;
 	observe<A = any>(): Subject<A>;
 	unsubscribeAll(): void;
+	snapshot(): T;
 }
