@@ -14,6 +14,8 @@
     "Observe",
     "rxjs"
   ],
+  "repository": "https://github.com/alexandercerutti/roxe",
+  "bugs": "https://github.com/alexandercerutti/roxe/issues",
   "author": "Alexander P. Cerutti <cerutti.alexander@gmail.com>",
   "license": "GPL-3.0-only",
   "dependencies": {
