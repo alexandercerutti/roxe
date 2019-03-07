@@ -1,4 +1,7 @@
 .vscode/
+tests/
+tsconfig.json
+test.js
 *.ts
 !index.d.ts
 *.map

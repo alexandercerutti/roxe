@@ -1,17 +1,16 @@
-# Rexo
+# Roxe
 
-This is a small utility to observe changes to complex objects, designed for applications with multiple files that need to listen for changes from a common object (e.g. a State).
-In fact, this works perfectly when we work in React-like environments.
-As Javascript devs know, native `observe` and `watch` methods were deprecated, probably for bad performance. Proxies then were created as a partial solution. RxJS implements greatly the Observable Pattern.
+This is a lightweight utility created to observe changes to complex objects structures. Mainly designed for event-driven applications, with multiple files, that need to execute some side-effect when a common object changes its status.
 
-So I took them and merged them together: **Rexo** (_Rexursive-observer_ (Recursive + Rx))
-The result is a typescript package that let you `subscribe` to objects and nested objects in a very easy way.
+It uses the powerfulness of RxJS and ES Proxies to let developers subscribe to changes to every property, also nested ones, in the observed object.
+
+___
 
 
 ### Install
 
 ```sh
-$ npm install --save rexo
+$ npm install --save roxe
 ```
 
 <br>
@@ -22,8 +21,10 @@ $ npm install --save rexo
 
 In this usage example, I'm supposing you are using Typescript to show you the real advantage of this package.
 
-You simply need to instantiate a new class for every external object (not nested ones) you want to observe. Easily pass the interface that defines your Object as generic parameter of `ObservableObject`. This will let you, in Typescript, to access to object's properties, like
-`nestedObjects.firstProperty`. Else, Typescript will not recognize it.
+Instantiate a new class for every external object (not nested ones) you want to observe and pass the descriptive _typescript interface_ to `ObservableObject`'s generic parameter. This will let you, to access to object's properties, like
+`nestedObjects.firstProperty`, without ignoring the errors.
+
+Observe a specific chain-object (a dotted-separated string, as below) and then... subscribe!!! 🎉🎉🎉💁‍♂️
 
 ```typescript
 interface CustomObject {
@@ -78,7 +79,7 @@ nestedObjects.secondProperty = {
 ___
 
 ## Documentation
-___
+
 
 **constructor()**
 
@@ -92,7 +93,7 @@ new ObservableObject(from, optHandlers);
 | Key | Type | Description | Optional | Default |
 |-----|:----:|-------------|:--------:|:-------:|
 | from | T    | The object you want to observe | `true` | `{}` |
-| optHandlers | ProxyHandler<any> | Other handlers through which the object changes developers may them want to pass. A set handler will be executed before the notification will happen, within the current one. If a set handler will return `false`, it will stop the execution and won't notify for the changes | `true` | `{}` |
+| optHandlers | ProxyHandler<any> | Other handlers through which the object changes developers may them want to pass through. A set handler will be executed before the notification will happen, within the current one. If a set handler will return `false`, it will stop the execution and won't notify for the changes | `true` | `{}` |
 
 <br>
 
@@ -103,7 +104,7 @@ ___
 **.observe()**
 
 ```typescript
-observableObject.observe<T = any>(prop: string): Subject<T>;
+observableObject.observe<A = any>(prop: string): Subject<T>;
 ```
 
 **Description**:
@@ -117,7 +118,7 @@ This methods accepts a generic type `T` that will be passed to the creation of t
 
 **Returns**:
 
-`Subject<T>`
+`Subject<A>`
 
 <br>
 
@@ -140,9 +141,11 @@ observableObject.unsubscribeAll(subscriptions: Subscription[]): void;
 
 **Description**:
 
-Performs unbscription on all the passed `Subscription`;
+Performs unbscription on all the passed `Subscription`; Save all the subscriptions you create in an array and then pass it to the method to remove them all.
+Then, initialize back the array to empty.
 
 <br>
+
 ___
 <br>
 
@@ -173,6 +176,8 @@ Be sure to be in *non-strict-mode*.
 The default getter is there to pass you only the values related to the object you want to observe.
 All the other traps are free, but, as *setter* and *getter*, they will be applied to every nested object. So be sure to implement the appropriate checks.
 
+> Be sure to not overload the traps, or your application performance may have affected.
+
 ___
 ### Testing
 
@@ -182,10 +187,10 @@ Some tests based on Jasmine, are available to be executed to show how this packa
 $ npm install -D
 $ npm test
 ```
-___
+
 ___
 ### Credits ⭐
-___
+
 This small package is a fork of a package, created by me, while working at [IdeaSolutions S.r.l.](http://www.ideasolutions.it/), an Italian company based in Naples, Italy. A great company to work for.
 
 <br>

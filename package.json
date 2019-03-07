@@ -1,5 +1,5 @@
 {
-  "name": "rexo",
+  "name": "roxe",
   "version": "1.0.0",
   "description": "Observe object changes through proxies",
   "main": "index.js",
