@@ -162,7 +162,11 @@ class _ObservableObject<T> {
 	 */
 
 	snapshot(): T {
-		return Object.assign({} as T, this);
+		const snapshot = Object.assign({} as T, this);
+		// In the snapshot, we don't need the symbol that collects
+		// All the observers
+		delete snapshot[observedObjects];
+		return snapshot;
 	}
 }
 
