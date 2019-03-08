@@ -27,7 +27,6 @@ class ReusableSubject<T> extends Subject<T> {
 }
 
 class _ObservableObject<T> {
-	@nonEnumerable
 	private [observedObjects]: Observed = {};
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
@@ -228,16 +227,4 @@ function buildNotificationChain(source: AnyKindOfObject, ...args: string[]): Any
 
 function bindLast(fn: Function, ...boundArgs: any[]) {
 	return (...args: [Object, string, any, any?]) => fn(...args, ...boundArgs);
-}
-
-/**
- * @enumerable Decorator to initialize a property to be writable but not enumerable
- * @param {boolean} value - new value
- */
-
-function nonEnumerable(target: any, propertyKey: string | number | symbol) {
-	Object.defineProperty(target, propertyKey, {
-		writable: true,
-		enumerable: false
-	});
 }
