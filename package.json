@@ -1,6 +1,6 @@
 {
   "name": "roxe",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Observe object changes through proxies",
   "main": "index.js",
   "scripts": {
