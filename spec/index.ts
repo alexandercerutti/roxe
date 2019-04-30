@@ -112,4 +112,107 @@ describe("Creating a new observable object", () => {
 			expect(oo.b.c).toBe(4);
 		});
 	});
+
+	describe("But first... let me take a snapshot", () => {
+		let oo: ObservableObjectType<DeepObject>;
+
+		it("Should return a full snapshot of the structure", () => {
+			oo = new ObservableObject<DeepObject>({
+				a: 1,
+				b: {
+					c: 2,
+					d: {
+						e: 3,
+						f: {
+							g: 4,
+							h: {
+								i: 5,
+							}
+						}
+					}
+				}
+			});
+
+			expect(
+				compareObjects(
+					{
+						a: 1,
+						b: {
+							c: 2,
+							d: {
+								e: 3,
+								f: {
+									g: 4,
+									h: {
+										i: 5,
+									}
+								}
+							}
+						}
+					},
+					oo.snapshot()
+				)
+			).toBe(true);
+		});
+
+		it("Should take a partial snapshot (object) of the main object", () => {
+			oo = new ObservableObject<DeepObject>({
+				a: 1,
+				b: {
+					c: 2,
+					d: {
+						e: 3,
+						f: {
+							g: 4,
+							h: {
+								i: 5,
+							}
+						}
+					}
+				}
+			});
+
+			expect(
+				compareObjects(
+					{
+						g: 4,
+						h: {
+							i: 5,
+						}
+					},
+					oo.snapshot("b.d.f")
+				)
+			).toBe(true);
+		});
+
+		it("Should take a partial snapshot (value) of the main object", () => {
+			oo = new ObservableObject<DeepObject>({
+				a: 1,
+				b: {
+					c: 2,
+					d: {
+						e: 3,
+						f: {
+							g: 4,
+							h: {
+								i: 5,
+							}
+						}
+					}
+				}
+			});
+
+			expect(oo.snapshot("b.d.e")).toBe(3);
+		});
+	});
 });
+
+function compareObjects(obj1: any, obj2: any): boolean {
+	return Object.keys(obj1).every(key => {
+		if (obj2[key] && typeof obj1[key] === "object") {
+			return compareObjects(obj1[key], obj2[key]);
+		}
+
+		return obj2[key] === obj1[key];
+	});
+}

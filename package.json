@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "jasmine tests/index.js"
+    "test": "jasmine spec/index.js"
   },
   "keywords": [
     "Javascript",
