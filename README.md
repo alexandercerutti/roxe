@@ -104,7 +104,7 @@ ___
 **.observe()**
 
 ```typescript
-observableObject.observe<A = any>(prop: string): Subject<T>;
+observableObject.observe<A = any>(prop: string): Subject<A>;
 ```
 
 **Description**:
@@ -112,7 +112,7 @@ observableObject.observe<A = any>(prop: string): Subject<T>;
 Use this method to register a Subject to subscribe to.
 To avoid confusion between Subject `.unsubscribe` and Subscription `.unsubscribe`, the returned Subject will unsubscribe only the registered `Subscriptions` without closing/stopping the Subject, even if (I know...), Subject shouldn't be reusable.
 
-This methods accepts a generic type `T` that will be passed to the creation of the Subject.
+This methods accepts a generic type `A` that will be passed to the creation of the Subject.
 
 <br>
 
