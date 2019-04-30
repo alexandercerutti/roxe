@@ -152,12 +152,20 @@ ___
 **.snapshot()**
 
 ```typescript
-observableObject.snapshot(): T;
+observableObject.snapshot(path?: string): any;
 ```
 
 **Description**:
 
-Returns the current clean object structure.
+Returns a clean (no proxies or internal props) object structure or value of a nested property.
+
+<br>
+
+**Arguments**:
+
+| Key  | Type | Description |
+|------|:----:|-------------|
+| path |string| The key-path to identify the property, or object, to snap. |
 
 <br>
 <br>
@@ -167,9 +175,9 @@ ___
 ### Defining own traps
 
 This package has been built with in mind the possibility to be extended as much as possible.
-In fact, to the constructor, when creating a new observable object, custom proxy handlers are available to be passed.
+In fact, observable object's constructor allows custom proxy handlers to be passed.
 
-As v1.0.0, *getter* and *setter* are the only two handlers that are "protected": they cannot be fully overridden, but they will be attached to the integrated ones and may alter the behaviour of the current ones.
+As v1.0, *getter* and *setter* are the only two handlers that are "protected": they cannot be fully overridden, but the custom ones will be attached in queue to the integrated ones and may alter the behaviour of the current ones.
 For example, make the custom setter return false to not assign the value.
 Be sure to be in *non-strict-mode*.
 

@@ -158,14 +158,38 @@ class _ObservableObject<T> {
 	}
 
 	/**
-	 * Returns the current object without proxies
+	 * Returns the current image of a key of the main
+	 * object or a nested key.
+	 *
+	 * @param {string} path - dotted-notation path ("a.b.c")
+	 * @returns {any} - the whole observed object or part of it
+	 * @throws if the current path does not reflect to an available object
 	 */
 
-	snapshot(): T {
-		const snapshot = Object.assign({} as T, this);
-		// In the snapshot, we don't need the symbol that collects
-		// All the observers
-		delete snapshot[observedObjects];
+	snapshot(path?: string): any {
+		let snapshot: any;
+
+		if (path && typeof path === "string") {
+			snapshot = path.split(".").reduce((acc: AnyKindOfObject, current: string) => {
+				if (!(current && typeof acc === "object" && !Array.isArray(acc) && (acc as Object).hasOwnProperty(current))) {
+					throw new Error(`Cannot access to ${current} of ${path}. No key available`);
+				}
+
+				return acc[current];
+			}, this);
+
+			if (typeof snapshot === "object") {
+				return Object.assign({}, snapshot);
+			} else {
+				return snapshot;
+			}
+		} else {
+			snapshot = Object.assign({} as T, this);
+			// In the snapshot, we don't need the symbol that collects
+			// All the observers
+			delete snapshot[observedObjects];
+		}
+
 		return snapshot;
 	}
 }
