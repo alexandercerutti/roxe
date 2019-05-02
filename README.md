@@ -2,7 +2,7 @@
 
 This is a lightweight utility created to observe changes to complex objects structures. This is mainly designed for event-driven applications, usually with multiple files, that need to execute some side-effects when a common central object changes its status.
 
-It uses the powerfulness of RxJS and ES Proxies to let developers subscribe to changes to every property, also nested ones, in the observed object.
+It uses the powerfulness of RxJS and ES Proxies to let developers subscribe to changes to every property, also nested ones and arrays, in the observed object.
 
 ___
 
