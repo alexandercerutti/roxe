@@ -33,7 +33,7 @@ class _ObservableObject<T> {
 		let setCustomHandler: ((obj: any, prop: string, value: any, receiver?: any) => boolean) | undefined;
 		let getCustomHandler: ((obj: any, prop: string | number | symbol, receiver?: any) => any) | undefined;
 
-		if (optHandlers) {
+		if (optHandlers && Object.keys(optHandlers).length) {
 			if (optHandlers.set) {
 				setCustomHandler = optHandlers.set;
 				delete optHandlers.set;
@@ -49,7 +49,7 @@ class _ObservableObject<T> {
 			// to keep args as the last and not include receiver in this one
 			set: (obj: any, prop: string, value: any, receiver?: any, ...args: any[]): boolean => {
 				let notificationChain: AnyKindOfObject;
-				if (typeof value === "object" && !Array.isArray(value)) {
+				if (typeof value === "object") {
 					// Creating the chain of properties that will be notified
 					notificationChain = Object.assign({
 						[prop]: value,
@@ -73,9 +73,12 @@ class _ObservableObject<T> {
 					 * will receive a setter with the parent keys.
 					 * w property, will receive below (in else),
 					 * ["x", "y", "z"] as args.
+					 *
+					 * We have to copy handlers to a new object to keep
+					 * the original `handlers.set` clean from any external argument
 					 */
-					obj[prop] = new Proxy(value, Object.assign(handlers, {
-						set: bindLast(handlers.set, [...args, prop]),
+					obj[prop] = new Proxy(value, Object.assign({}, handlers, {
+						set: bindLast(handlers.set, ...args, prop),
 					}));
 				} else {
 					/*
@@ -104,7 +107,7 @@ class _ObservableObject<T> {
 
 					obj[prop] = value;
 
-					const elementKey = args.length && args[0].length ? [...args[0], prop].join(".") : prop;
+					const elementKey = args.length ? [...args, prop].join(".") : prop;
 					notificationChain = {
 						[elementKey] : value
 					};
@@ -208,8 +211,8 @@ function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHa
 	let chain: AnyKindOfObject = {};
 	for (const prop in sourceObject) {
 		if (typeof sourceObject[prop] === "object" && !Array.isArray(sourceObject[prop])) {
-			chain[prop] = buildInitialProxyChain(sourceObject[prop], Object.assign(handlers, {
-				set: bindLast(handlers.set!, [...args, prop])
+			chain[prop] = buildInitialProxyChain(sourceObject[prop], Object.assign({}, handlers, {
+				set: bindLast(handlers.set!, ...args, prop)
 			}), ...args, prop);
 		} else {
 			chain[prop] = sourceObject[prop];
