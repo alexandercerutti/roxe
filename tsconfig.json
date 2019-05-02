@@ -12,7 +12,7 @@
     "strictFunctionTypes": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
-    "removeComments": true,
+    "declaration": true
   },
   "exclude": [
     "node_modules"

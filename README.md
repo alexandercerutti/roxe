@@ -1,6 +1,6 @@
 # Roxe
 
-This is a lightweight utility created to observe changes to complex objects structures. Mainly designed for event-driven applications, with multiple files, that need to execute some side-effect when a common object changes its status.
+This is a lightweight utility created to observe changes to complex objects structures. This is mainly designed for event-driven applications, usually with multiple files, that need to execute some side-effects when a common central object changes its status.
 
 It uses the powerfulness of RxJS and ES Proxies to let developers subscribe to changes to every property, also nested ones, in the observed object.
 
@@ -195,6 +195,20 @@ Some tests based on Jasmine, are available to be executed to show how this packa
 $ npm install -D
 $ npm test
 ```
+
+___
+### Caveats
+
+This project compiles to a `CommonJS` module as the original project this comes from (see below), used Webpack, which does not digest `UMD` modules (using some loaders was breaking the debugging process for some reasons). If you'll need to get the UMD version,, I have prepared an npm script to achieve this. Follow the script below:
+
+```sh
+# !! change to the folder you want to clone into, first !!
+git clone https://github.com/alexandercerutti/roxe.git;
+cd roxe;
+npm run build:umd;
+```
+
+This will output a new `umd/` folder with the generated files. To conclude the process, copy the whole content of `umd/` to a new `roxe` folder in your project. I suggest you to create a link and/or commit this package on your repo to avoid losing it.
 
 ___
 ### Credits ⭐

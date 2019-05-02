@@ -3,3 +3,4 @@ node_modules/
 *.js
 .DS_Store
 *.map
+umd/

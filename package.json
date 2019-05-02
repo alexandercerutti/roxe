@@ -4,6 +4,9 @@
   "description": "Observe object changes through proxies",
   "main": "index.js",
   "scripts": {
+    "build:umd:cp": "cp README.md LICENSE package.json umd/",
+    "build:umd": "npm run clear:umd && tsc --outDir umd --module umd && npm run build:umd:cp",
+    "clear:umd": "rm -rf umd/",
     "build": "tsc",
     "prepublishOnly": "npm run build",
     "test": "jasmine spec/index.js"
