@@ -5,3 +5,4 @@ node_modules/
 spec/*.d.ts
 *.map
 umd/
+test.d.ts

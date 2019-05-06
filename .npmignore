@@ -4,6 +4,7 @@ tsconfig.json
 test.js
 *.ts
 !*.d.ts
+test.d.ts
 .DS_Store
 spec/*.d.ts
 *.map

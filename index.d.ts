@@ -1,8 +1,8 @@
-import { Subject, Subscription } from "rxjs";
+import { Subscription, Observable } from "rxjs";
 import { observedObjects } from "./observedObjectsSymbol";
-export declare type ObservableObjectType<T> = _ObservableObject<T> & T;
+export declare type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
-    new <T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObjectType<T>;
+    new <T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObject<T>;
 }
 declare class _ObservableObject<T> {
     private [observedObjects];
@@ -14,7 +14,7 @@ declare class _ObservableObject<T> {
      * 		property to subscribe to (e.g. `epsilon`
      * 		or `time.current`)
      */
-    observe<A = any>(prop: string): Subject<A>;
+    observe<A = any>(prop: string): Observable<A>;
     /**
      * Unsubscribes from all the subscriptions in a specific pool
      * @param subscriptions
