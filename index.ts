@@ -1,9 +1,9 @@
 import { Subject, Subscription, Observable } from "rxjs";
 import { observedObjects } from "./observedObjectsSymbol";
 
-export type ObservableObjectType<T> = _ObservableObject<T> & T;
+export type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
-	new<T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObjectType<T>;
+	new<T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObject<T>;
 }
 
 interface Observed {

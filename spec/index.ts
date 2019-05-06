@@ -1,4 +1,4 @@
-import { ObservableObject, ObservableObjectType } from "..";
+import { ObservableObject } from "..";
 import { observedObjects } from "../observedObjectsSymbol";
 
 interface DeepObject {
@@ -20,7 +20,7 @@ interface DeepObject {
 }
 
 describe("Creating a new observable object", () => {
-	let oo: ObservableObjectType<DeepObject>;
+	let oo: ObservableObject<DeepObject>;
 
 	describe("Registration and observing for changes", () => {
 		beforeEach(() => {
@@ -79,7 +79,7 @@ describe("Creating a new observable object", () => {
 	});
 
 	describe("Proxy handler", () => {
-		let oo: ObservableObjectType<DeepObject>;
+		let oo: ObservableObject<DeepObject>;
 
 		it("Should attach custom handlers to the original one", () => {
 			oo = new ObservableObject<DeepObject>({
@@ -114,7 +114,7 @@ describe("Creating a new observable object", () => {
 	});
 
 	describe("But first... let me take a snapshot", () => {
-		let oo: ObservableObjectType<DeepObject>;
+		let oo: ObservableObject<DeepObject>;
 
 		it("Should return a full snapshot of the structure", () => {
 			oo = new ObservableObject<DeepObject>({
