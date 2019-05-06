@@ -1,4 +1,4 @@
-import { Subject, Subscription } from "rxjs";
+import { Subject, Subscription, Observable } from "rxjs";
 import { observedObjects } from "./observedObjectsSymbol";
 
 export type ObservableObjectType<T> = _ObservableObject<T> & T;
@@ -12,18 +12,6 @@ interface Observed {
 
 interface AnyKindOfObject {
 	[key: string]: any;
-}
-
-/**
- * A Subject that will only memorize its subscribers
- * And remove them on unsubscribe.
- * Unsubscription will not close or stop the Subject itself.
- */
-
-class ReusableSubject<T> extends Subject<T> {
-	unsubscribe() {
-		this.observers = [];
-	}
 }
 
 class _ObservableObject<T> {
@@ -143,12 +131,12 @@ class _ObservableObject<T> {
 	 * 		or `time.current`)
 	 */
 
-	observe<A = any>(prop: string): Subject<A> {
+	observe<A = any>(prop: string): Observable<A> {
 		if (!this[observedObjects][prop]) {
-			this[observedObjects][prop] = new ReusableSubject<A>();
+			this[observedObjects][prop] = new Subject<A>();
 		}
 
-		return this[observedObjects][prop];
+		return this[observedObjects][prop].asObservable();
 	}
 
 	/**

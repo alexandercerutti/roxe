@@ -104,21 +104,19 @@ ___
 **.observe()**
 
 ```typescript
-observableObject.observe<A = any>(prop: string): Subject<A>;
+observableObject.observe<A = any>(prop: string): Observable<A>;
 ```
 
 **Description**:
 
-Use this method to register a Subject to subscribe to.
-To avoid confusion between Subject `.unsubscribe` and Subscription `.unsubscribe`, the returned Subject will unsubscribe only the registered `Subscriptions` without closing/stopping the Subject, even if (I know...), Subject shouldn't be reusable.
-
+Use this method to create an Observable to which you can subscribe to.
 This methods accepts a generic type `A` that will be passed to the creation of the Subject.
 
 <br>
 
 **Returns**:
 
-`Subject<A>`
+`Observable<A>`
 
 <br>
 
@@ -199,7 +197,7 @@ $ npm test
 ___
 ### Caveats
 
-This project compiles to a `CommonJS` module as the original project this comes from (see below), used Webpack, which does not digest `UMD` modules (using some loaders was breaking the debugging process for some reasons). If you'll need to get the UMD version,, I have prepared an npm script to achieve this. Follow the script below:
+This project compiles to a `CommonJS` module as the original project this comes from (see below), used Webpack, which does not digest `UMD` modules (using some loaders was breaking the debugging process for some reasons). If you'll need to get the UMD version, I have prepared an npm script to achieve this. Follow the script below:
 
 ```sh
 # !! change to the folder you want to clone into, first !!
