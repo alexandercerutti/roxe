@@ -25,8 +25,8 @@ declare class _ObservableObject<T> {
      * object or a nested key.
      *
      * @param {string} path - dotted-notation path ("a.b.c")
-     * @returns {any} - the whole observed object or part of it
-     * @throws if the current path does not reflect to an available object
+     * @returns {any | undefined} - the whole observed object or part of it.
+     * 	Undefined if the path is not matched;
      */
     snapshot(path?: string): any;
 }

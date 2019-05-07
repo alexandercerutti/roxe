@@ -156,27 +156,37 @@ class _ObservableObject<T> {
 	 * object or a nested key.
 	 *
 	 * @param {string} path - dotted-notation path ("a.b.c")
-	 * @returns {any} - the whole observed object or part of it
-	 * @throws if the current path does not reflect to an available object
+	 * @returns {any | undefined} - the whole observed object or part of it.
+	 * 	Undefined if the path is not matched;
 	 */
 
 	snapshot(path?: string): any {
 		let snapshot: any;
+		let firstUnavailableKey: string = "";
 
 		if (path && typeof path === "string") {
 			snapshot = path.split(".").reduce((acc: AnyKindOfObject, current: string) => {
-				if (!(current && typeof acc === "object" && !Array.isArray(acc) && (acc as Object).hasOwnProperty(current))) {
-					throw new Error(`Cannot access to ${current} of ${path}. No key available`);
+				if (!(acc && typeof acc === "object" && !Array.isArray(acc) && current && (acc as Object).hasOwnProperty(current))) {
+					// if the previous iteration returns undefined,
+					// we'll forward this until the end of the loop.
+					// We keep the first unavailable key for debug.
+					firstUnavailableKey = firstUnavailableKey || current;
+					return undefined;
 				}
 
 				return acc[current];
 			}, this);
 
-			if (typeof snapshot === "object") {
-				return Object.assign({}, snapshot);
-			} else {
+			if (snapshot === undefined) {
+				roxeDebug(`Cannot access to path "${path}". "${firstUnavailableKey}" is not reachable`);
 				return snapshot;
 			}
+
+			if (typeof snapshot === "object") {
+				return Object.assign({}, snapshot);
+			}
+
+			return snapshot;
 		} else {
 			snapshot = Object.assign({} as T, this);
 			// In the snapshot, we don't need the symbol that collects

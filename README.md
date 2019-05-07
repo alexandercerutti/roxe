@@ -156,6 +156,8 @@ observableObject.snapshot(path?: string): any;
 **Description**:
 
 Returns a clean (no proxies or internal props) object structure or value of a nested property.
+Returns `undefined` if the specified observed object doesn't own a middle or end key of the specified path.
+Use `debug` (see below) to get better info to which part of the path failed if the snapshot is undefined.
 
 <br>
 
@@ -164,6 +166,10 @@ Returns a clean (no proxies or internal props) object structure or value of a ne
 | Key  | Type | Description |
 |------|:----:|-------------|
 | path |string| The key-path to identify the property, or object, to snap. |
+
+**Caveats**:
+
+Avoid to snap(shot) your fingers or Thanos will be happy.
 
 <br>
 <br>
@@ -183,6 +189,21 @@ The default getter is there to pass you only the values related to the object yo
 All the other traps are free, but, as *setter* and *getter*, they will be applied to every nested object. So be sure to implement the appropriate checks.
 
 > Be sure to not overload the traps, or your application performance may have affected.
+
+___
+
+### Debug
+
+This package uses [Debug](https://github.com/visionmedia/debug) to show some messages.
+
+To show those messages, start your package as:
+
+```sh
+# Bash / linux
+$ DEBUG=roxe node app.js
+```
+
+To debug on different OSs, refer to [Debug](https://github.com/visionmedia/debug) package.
 
 ___
 ### Testing
