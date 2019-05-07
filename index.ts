@@ -1,5 +1,8 @@
 import { Subject, Subscription, Observable } from "rxjs";
 import { observedObjects } from "./observedObjectsSymbol";
+import * as debug from "debug";
+
+const roxeDebug = debug("roxe");
 
 export type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
