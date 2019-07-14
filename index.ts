@@ -21,18 +21,16 @@ class _ObservableObject<T> {
 	private [observedObjects]: Observed = {};
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
-		let setCustomHandler: ((obj: any, prop: string, value: any, receiver?: any) => boolean) | undefined;
-		let getCustomHandler: ((obj: any, prop: string | number | symbol, receiver?: any) => any) | undefined;
+		let customSetTrap: ((obj: any, prop: string, value: any, receiver?: any) => boolean) | undefined;
+		let customGetTrap: ((obj: any, prop: string | number | symbol, receiver?: any) => any) | undefined;
 
-		if (optHandlers && Object.keys(optHandlers).length) {
-			if (optHandlers.set) {
-				setCustomHandler = optHandlers.set;
-				delete optHandlers.set;
-			}
+		if (optHandlers && optHandlers.set) {
+			customSetTrap = optHandlers.set;
+			delete optHandlers.set;
+		}
 
-			if (optHandlers.get) {
-				getCustomHandler = optHandlers.get;
-			}
+		if (optHandlers && optHandlers.get) {
+			customGetTrap = optHandlers.get;
 		}
 
 		const handlers = Object.assign(optHandlers, {
@@ -46,9 +44,8 @@ class _ObservableObject<T> {
 						[prop]: value,
 					}, buildNotificationChain(value, prop));
 
-
-					if (setCustomHandler) {
-						let setResult = setCustomHandler(obj, prop, value, receiver);
+					if (customSetTrap) {
+						const setResult = customSetTrap(obj, prop, value, receiver);
 
 						if (setResult === false) {
 							return setResult;
@@ -88,8 +85,8 @@ class _ObservableObject<T> {
 						return true;
 					}
 
-					if (setCustomHandler) {
-						let setResult = setCustomHandler(obj, prop, value, receiver);
+					if (customSetTrap) {
+						const setResult = customSetTrap(obj, prop, value, receiver);
 
 						if (setResult === false) {
 							return setResult;
