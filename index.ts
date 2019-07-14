@@ -111,13 +111,13 @@ class _ObservableObject<T> {
 
 				return true;
 			},
-			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: typeof getCustomHandler) => {
-				if (customGetter !== undefined && !(prop in _ObservableObject.prototype)) {
-					return customGetter(target, prop, receiver);
+			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: typeof customGetTrap) => {
+				if (!customGetter || prop in _ObservableObject.prototype) {
+					return Reflect.get(target, prop, receiver);
 				}
 
-				return Reflect.get(target, prop, receiver);
-			}, getCustomHandler)
+				return customGetter(target, prop, receiver);
+			}, customGetTrap)
 		});
 
 		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
@@ -158,37 +158,35 @@ class _ObservableObject<T> {
 	 */
 
 	snapshot(path?: string): any {
-		let snapshot: any;
 		let firstUnavailableKey: string = "";
 
-		if (path && typeof path === "string") {
-			snapshot = path.split(".").reduce((acc: AnyKindOfObject, current: string) => {
-				if (!(acc && typeof acc === "object" && !Array.isArray(acc) && current && (acc as Object).hasOwnProperty(current))) {
-					// if the previous iteration returns undefined,
-					// we'll forward this until the end of the loop.
-					// We keep the first unavailable key for debug.
-					firstUnavailableKey = firstUnavailableKey || current;
-					return undefined;
-				}
-
-				return acc[current];
-			}, this);
-
-			if (snapshot === undefined) {
-				roxeDebug(`Cannot access to path "${path}". "${firstUnavailableKey}" is not reachable`);
-				return snapshot;
-			}
-
-			if (typeof snapshot === "object") {
-				return Object.assign({}, snapshot);
-			}
-
-			return snapshot;
-		} else {
-			snapshot = Object.assign({} as T, this);
+		if (!(path && typeof path === "string")) {
+			const snapshot = Object.assign({} as T, this);
 			// In the snapshot, we don't need the symbol that collects
 			// All the observers
 			delete snapshot[observedObjects];
+			return snapshot;
+		}
+
+		const snapshot = path.split(".").reduce((acc: AnyKindOfObject, current: string) => {
+			if (!(acc && typeof acc === "object" && !Array.isArray(acc) && current && (acc as Object).hasOwnProperty(current))) {
+				// if the previous iteration returns undefined,
+				// we'll forward this until the end of the loop.
+				// We keep the first unavailable key for debug.
+				firstUnavailableKey = firstUnavailableKey || current;
+				return undefined;
+			}
+
+			return acc[current];
+		}, this);
+
+		if (snapshot === undefined) {
+			roxeDebug(`Cannot access to path "${path}". "${firstUnavailableKey}" is not reachable`);
+			return snapshot;
+		}
+
+		if (typeof snapshot === "object") {
+			return Object.assign({}, snapshot);
 		}
 
 		return snapshot;
