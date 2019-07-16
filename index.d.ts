@@ -1,11 +1,13 @@
 import { Subscription, Observable } from "rxjs";
-import { observedObjects } from "./observedObjectsSymbol";
+declare const customTraps: unique symbol;
+declare const observedObjects: unique symbol;
 export declare type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
     new <T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObject<T>;
 }
 declare class _ObservableObject<T> {
     private [observedObjects];
+    private [customTraps];
     constructor(from?: T, optHandlers?: ProxyHandler<any>);
     /**
      * Registers a custom property to be observed.
