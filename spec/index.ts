@@ -1,5 +1,5 @@
 import { ObservableObject } from "..";
-import { observedObjects } from "../observedObjectsSymbol";
+import { Subject } from "rxjs";
 
 interface DeepObject {
 	a?: number;
@@ -43,6 +43,8 @@ describe("Registration and changes observation:", () => {
 
 	it("Should register an observer to a specific key of the object", () => {
 		oo.observe("b.d.e");
+		const obsSymbols = Object.getOwnPropertySymbols(oo);
+		const observedObjects: any = obsSymbols.find((sym: any) => oo[sym]["b.d.e"] && oo[sym]["b.d.e"] instanceof Subject);
 		expect(Object.keys(oo[observedObjects]).includes("b.d.e")).toBeTruthy();
 	});
 

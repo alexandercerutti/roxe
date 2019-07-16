@@ -1,8 +1,9 @@
 import { Subject, Subscription, Observable } from "rxjs";
-import { observedObjects } from "./observedObjectsSymbol";
 import * as debug from "debug";
 
 const roxeDebug = debug("roxe");
+const customTraps = Symbol("_customTraps");
+const observedObjects = Symbol("_observedObjects");
 
 export type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
@@ -19,18 +20,16 @@ interface AnyKindOfObject {
 
 class _ObservableObject<T> {
 	private [observedObjects]: Observed = {};
+	private [customTraps]: ProxyHandler<Object> = {};
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
-		let customSetTrap: ((obj: any, prop: string, value: any, receiver?: any) => boolean) | undefined;
-		let customGetTrap: ((obj: any, prop: string | number | symbol, receiver?: any) => any) | undefined;
-
 		if (optHandlers && optHandlers.set) {
-			customSetTrap = optHandlers.set;
+			this[customTraps].set = optHandlers.set;
 			delete optHandlers.set;
 		}
 
 		if (optHandlers && optHandlers.get) {
-			customGetTrap = optHandlers.get;
+			this[customTraps].get = optHandlers.get;
 		}
 
 		const handlers = Object.assign(optHandlers, {
@@ -44,13 +43,10 @@ class _ObservableObject<T> {
 						[prop]: value,
 					}, buildNotificationChain(value, prop));
 
-					if (customSetTrap) {
-						const setResult = customSetTrap(obj, prop, value, receiver);
-
-						if (setResult === false) {
-							return setResult;
-						}
+					if (this[customTraps].set && this[customTraps].set!(obj, prop, value, receiver) === false) {
+						return false;
 					}
+
 					/*
 					 * We when we set a property which will be an object
 					 * we set it as a Proxy and pass it
@@ -85,12 +81,8 @@ class _ObservableObject<T> {
 						return true;
 					}
 
-					if (customSetTrap) {
-						const setResult = customSetTrap(obj, prop, value, receiver);
-
-						if (setResult === false) {
-							return setResult;
-						}
+					if (this[customTraps].set && this[customTraps].set!(obj, prop, value, receiver) === false) {
+						return false;
 					}
 
 					obj[prop] = value;
@@ -111,13 +103,13 @@ class _ObservableObject<T> {
 
 				return true;
 			},
-			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: typeof customGetTrap) => {
+			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: ProxyHandler<Object>["get"]) => {
 				if (!customGetter || prop in _ObservableObject.prototype) {
 					return Reflect.get(target, prop, receiver);
 				}
 
 				return customGetter(target, prop, receiver);
-			}, customGetTrap)
+			}, this[customTraps].get)
 		});
 
 		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
