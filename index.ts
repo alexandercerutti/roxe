@@ -36,13 +36,17 @@ class _ObservableObject<T> {
 			// Note for future: leave receiver as parameter even if not used
 			// to keep args as the last and not include receiver in this one
 			set: (obj: any, prop: string, value: any, receiver?: any, ...args: any[]): boolean => {
-				let notificationChain: AnyKindOfObject;
-				if (typeof value === "object") {
-					// Creating the chain of properties that will be notified
-					notificationChain = Object.assign({
-						[prop]: value,
-					}, buildNotificationChain(value, prop));
+				let notificationChain: AnyKindOfObject = {};
 
+				// If our object was valorized and at the end will be undefined or null
+				if ((obj[prop] && typeof obj[prop] === "object" && !value) || typeof value === "object") {
+					// Creating the chain of properties that will be notified
+					Object.assign(notificationChain, {
+						[[...args, prop].join(".")]: value
+					}, buildNotificationChain(obj[prop], value, ...args, prop));
+				}
+
+				if (typeof value === "object") {
 					if (this[customTraps].set && this[customTraps].set!(obj, prop, value, receiver) === false) {
 						return false;
 					}
