@@ -222,13 +222,23 @@ function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHa
  * @param args
  */
 
-function buildNotificationChain(source: AnyKindOfObject, ...args: string[]): AnyKindOfObject {
+function buildNotificationChain(current: AnyKindOfObject, source?: AnyKindOfObject, ...args: string[]): AnyKindOfObject {
+	// If our source was valorized and now will be null or undefined
 	let chain: AnyKindOfObject = {};
-	for (const prop in source) {
-		chain[[...args, prop].join(".")] = source[prop];
+	const targetObject = (
+		(source && Object.keys(source).length && source) ||
+		(current && Object.keys(current).length && current) ||
+		{}
+	);
+	const targetObjectKeys = Object.keys(targetObject);
 
-		if (typeof source[prop] === "object" && !Array.isArray(source[prop])) {
-			Object.assign(chain, buildNotificationChain(source[prop], ...args, prop))
+	for (let i = targetObjectKeys.length; i--;) {
+		const prop = targetObjectKeys[i];
+		const realSource = source && source[prop] || undefined;
+		chain[[...args, prop].join(".")] = realSource;
+
+		if (targetObject && targetObject[prop] && typeof targetObject[prop] === "object" && !Array.isArray(targetObject[prop])) {
+			Object.assign(chain, buildNotificationChain(current[prop], realSource, ...args, prop))
 		}
 	}
 
