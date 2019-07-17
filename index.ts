@@ -199,7 +199,8 @@ export const ObservableObject: ObservableConstructor = _ObservableObject as any;
 
 function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, ...args: any[]): ProxyConstructor {
 	let chain: AnyKindOfObject = {};
-	for (const prop in sourceObject) {
+	const targetObjectKeys = Object.keys(sourceObject);
+	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
 		if (typeof sourceObject[prop] === "object" && !Array.isArray(sourceObject[prop])) {
 			chain[prop] = buildInitialProxyChain(sourceObject[prop], Object.assign({}, handlers, {
 				set: bindLast(handlers.set!, ...args, prop)
@@ -232,8 +233,7 @@ function buildNotificationChain(current: AnyKindOfObject, source?: AnyKindOfObje
 	);
 	const targetObjectKeys = Object.keys(targetObject);
 
-	for (let i = targetObjectKeys.length; i--;) {
-		const prop = targetObjectKeys[i];
+	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
 		const realSource = source && source[prop] || undefined;
 		chain[[...args, prop].join(".")] = realSource;
 
