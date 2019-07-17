@@ -87,10 +87,10 @@ class _ObservableObject<T> {
 
 					obj[prop] = value;
 
-					const elementKey = args.length ? [...args, prop].join(".") : prop;
-					notificationChain = {
+					const elementKey = [...(args || []), prop].join(".");
+					Object.assign(notificationChain, {
 						[elementKey] : value
-					};
+					});
 				}
 
 				Object.keys(notificationChain).forEach((keyPath) => {
