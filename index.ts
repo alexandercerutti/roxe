@@ -36,7 +36,6 @@ class _ObservableObject<T> {
 			// Note for future: leave receiver as parameter even if not used
 			// to keep args as the last and not include receiver in this one
 			set: (obj: any, prop: string, value: any, receiver?: any, ...args: any[]): boolean => {
-				// If our object was valorized and at the end will be undefined or null
 				// Creating the chain of properties that will be notified
 				const shouldBuildNotificationChain = (
 					(obj[prop] && typeof obj[prop] === "object" && !value) ||
