@@ -40,7 +40,7 @@ class _ObservableObject<T> {
 				const shouldBuildNotificationChain = (
 					(obj[prop] && typeof obj[prop] === "object" && !value) ||
 					(value && typeof value === "object")
-				)
+				);
 
 				const notificationChain = Object.assign(
 					{ [[...(args || []), prop].join(".")]: value },
