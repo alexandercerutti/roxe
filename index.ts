@@ -158,6 +158,7 @@ class _ObservableObject<T> {
 			// In the snapshot, we don't need the symbol that collects
 			// All the observers
 			delete snapshot[observedObjects];
+			delete snapshot[customTraps];
 			return snapshot;
 		}
 
