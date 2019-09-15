@@ -312,14 +312,12 @@ function getDiff(source: AnyKindOfObject, different: AnyKindOfObject, parent: st
 		const keyWithParents = parent ? `${parent}.${key}` : key;
 
 		if (!source || !different) {
-			diffChain[keyWithParents] = (different || {})[key] || undefined;
-		}
-
-		/**
-		 * Keys can be absent only on one of the two
-		 * as we are iterating on a union of both's keys
-		 */
-		if (!different[key] || !source[key]) {
+			diffChain[keyWithParents] = undefined;
+		} else if (!different[key] || !source[key]) {
+			/**
+			 * Keys can be absent only on one of the two
+			 * as we are iterating on a union of both's keys
+			 */
 			diffChain[keyWithParents] = different[key];
 		} else {
 			if (typeof source[key] === object || different[key] !== source[key]) {
