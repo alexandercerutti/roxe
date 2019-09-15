@@ -12,7 +12,8 @@
     "strictFunctionTypes": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
-    "declaration": true
+    "declaration": true,
+    "sourceMap": true
   },
   "exclude": [
     "node_modules"
