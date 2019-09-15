@@ -107,14 +107,7 @@ class _ObservableObject<T> {
 					obj[prop] = value;
 				}
 
-				Object.keys(notificationChain).forEach((keyPath) => {
-					const value = notificationChain[keyPath];
-					// We want both single properties an complex objects to be notified when edited
-					if (this[observedObjects][keyPath]) {
-						this[observedObjects][keyPath].next(value);
-					}
-				});
-
+				this.__fireNotifications(notificationChain);
 				return true;
 			},
 		});
@@ -190,6 +183,26 @@ class _ObservableObject<T> {
 		}
 
 		return snapshot;
+	}
+
+	/**
+	 * Calls next on RxJS Subject
+	 * with the current value
+	 * for each element in the chain
+	 * @param notificationChain
+	 * @private
+	 */
+
+	private __fireNotifications(notificationChain: AnyKindOfObject): void {
+		const keys = Object.keys(notificationChain);
+		for (let i = keys.length; i > 0;) {
+			const key = keys[--i];
+			const value = notificationChain[key];
+
+			if (this[observedObjects][key]) {
+				this[observedObjects][key].next(value);
+			}
+		}
 	}
 }
 
