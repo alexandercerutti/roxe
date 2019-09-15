@@ -31,6 +31,14 @@ declare class _ObservableObject<T> {
      * 	Undefined if the path is not matched;
      */
     snapshot(path?: string): any;
+    /**
+     * Calls next on RxJS Subject
+     * with the current value
+     * for each element in the chain
+     * @param notificationChain
+     * @private
+     */
+    private __fireNotifications;
 }
 export declare const ObservableObject: ObservableConstructor;
 export {};

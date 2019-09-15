@@ -44,6 +44,11 @@ class _ObservableObject<T> {
 				this[customTraps].set = optHandlers.set;
 				delete optHandlers.set;
 			}
+
+			if (optHandlers.deleteProperty) {
+				this[customTraps].deleteProperty = optHandlers.deleteProperty;
+				delete optHandlers.deleteProperty;
+			}
 		}
 
 		const handlers = Object.assign(optHandlers, {
@@ -110,6 +115,13 @@ class _ObservableObject<T> {
 				this.__fireNotifications(notificationChain);
 				return true;
 			},
+			deleteProperty: (target: any, prop: string | number | symbol): boolean => {
+				const propsChain = [...(target[parent] || []), prop];
+				const notificationChain = buildNotificationChain(target[prop], undefined, ...propsChain);
+
+				this.__fireNotifications(notificationChain);
+				return (this[customTraps].deleteProperty || Reflect.deleteProperty)(target, prop);
+			}
 		});
 
 		return new Proxy(Object.assign(this, createProxyChain(from, handlers)), handlers);
