@@ -20,8 +20,8 @@ interface AnyKindOfObject {
 }
 
 class _ObservableObject<T> {
-	private [observedObjects]: Observed = {};
-	private [customTraps]: ProxyHandler<Object> = {};
+	private [observedObjects]: Observed;
+	private [customTraps]: ProxyHandler<Object>;
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
 		Object.defineProperties(this, {
