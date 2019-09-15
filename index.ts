@@ -24,13 +24,26 @@ class _ObservableObject<T> {
 	private [customTraps]: ProxyHandler<Object> = {};
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
-		if (optHandlers && optHandlers.set) {
-			this[customTraps].set = optHandlers.set;
-			delete optHandlers.set;
-		}
+		Object.defineProperties(this, {
+			[observedObjects]: {
+				value: {},
+				writable: false,
+				configurable: false,
+				enumerable: false
+			},
+			[customTraps]: {
+				value: {},
+				writable: false,
+				configurable: false,
+				enumerable: false,
+			}
+		});
 
-		if (optHandlers && optHandlers.get) {
-			this[customTraps].get = optHandlers.get;
+		if (optHandlers) {
+			if (optHandlers.set) {
+				this[customTraps].set = optHandlers.set;
+				delete optHandlers.set;
+			}
 		}
 
 		const handlers = Object.assign(optHandlers, {
@@ -104,13 +117,6 @@ class _ObservableObject<T> {
 
 				return true;
 			},
-			get: bindLast((target: any, prop: string | number | symbol, receiver: any, customGetter?: ProxyHandler<Object>["get"]) => {
-				if (!customGetter || prop in _ObservableObject.prototype) {
-					return Reflect.get(target, prop, receiver);
-				}
-
-				return customGetter(target, prop, receiver);
-			}, this[customTraps].get)
 		});
 
 		return new Proxy(Object.assign(this, createProxyChain(from, handlers)), handlers);
@@ -266,8 +272,8 @@ function buildNotificationChain(currentValue: any, newValue?: any, ...args: stri
 		 * of the single prop
 		 */
 		return { [parentsChain]: newValue };
-		}
 	}
+}
 
 /**
  * Obtains the keys/value difference in dot-notation
@@ -294,9 +300,9 @@ function getDiff(source: AnyKindOfObject, different: AnyKindOfObject, parent: st
 
 		if (!source || !different) {
 			diffChain[keyWithParents] = (different || {})[key] || undefined;
-}
+		}
 
-/**
+		/**
 		 * Keys can be absent only on one of the two
 		 * as we are iterating on a union of both's keys
 		 */
@@ -313,7 +319,7 @@ function getDiff(source: AnyKindOfObject, different: AnyKindOfObject, parent: st
 						 * we want to have a reference
 						 * to the object prop that changed
 						 * like a.b.d
- */
+						 */
 						diffChain[keyWithParents] = different[key];
 					}
 
