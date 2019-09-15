@@ -4,6 +4,7 @@ import * as debug from "debug";
 const roxeDebug = debug("roxe");
 const customTraps = Symbol("_customTraps");
 const observedObjects = Symbol("_observedObjects");
+const parent = Symbol("__parent");
 
 export type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
@@ -33,20 +34,15 @@ class _ObservableObject<T> {
 		}
 
 		const handlers = Object.assign(optHandlers, {
-			// Note for future: leave receiver as parameter even if not used
-			// to keep args as the last and not include receiver in this one
-			set: (obj: any, prop: string, value: any, receiver?: any, ...args: any[]): boolean => {
-				// Creating the chain of properties that will be notified
-				const shouldBuildNotificationChain = (
-					(obj[prop] && typeof obj[prop] === "object" && !value) ||
-					(value && typeof value === "object")
-				);
+			set: (obj: AnyKindOfObject, prop: string, value: any, receiver?: any): boolean => {
+				// Notification will have the current property
+				// along with the below keys (if the one that have been changed
+				// is an object)
 
-				const notificationChain = Object.assign(
-					{ [[...(args || []), prop].join(".")]: value },
-					(!shouldBuildNotificationChain && {} ||
-					buildNotificationChain(obj[prop], value, ...args, prop))
-				);
+				// @ts-ignore - symbols can be used as index in js.
+				const propsChain = [...(obj[parent] || []), prop];
+
+				const notificationChain = buildNotificationChain(obj[prop], value, ...propsChain);
 
 				if (typeof value === "object") {
 					if (this[customTraps].set && this[customTraps].set!(obj, prop, value, receiver) === false) {
@@ -55,9 +51,10 @@ class _ObservableObject<T> {
 
 					/*
 					 * We when we set a property which will be an object
-					 * we set it as a Proxy and pass it
-					 * an edited SETTER with binded trailing keys to reach
-					 * this property.
+					 * we set it as a Proxy. Each new proxy will have a
+					 * Symbol-property "parent" that will include all the
+					 * parents names to reach that specific object.
+					 *
 					 * E.g. if we have an object structure like x.y.z.w
 					 * x, x.y and x.y.z will be Proxies; each property
 					 * will receive a setter with the parent keys.
@@ -67,9 +64,12 @@ class _ObservableObject<T> {
 					 * We have to copy handlers to a new object to keep
 					 * the original `handlers.set` clean from any external argument
 					 */
-					obj[prop] = new Proxy(value, Object.assign({}, handlers, {
-						set: bindLast(handlers.set, ...args, prop),
-					}));
+
+					obj[prop] = createProxyChain(
+						value,
+						handlers,
+						propsChain
+					);
 				} else {
 					/*
 					 * We finalize the path of the keys passed in the above condition
@@ -113,7 +113,7 @@ class _ObservableObject<T> {
 			}, this[customTraps].get)
 		});
 
-		return new Proxy(Object.assign(this, buildInitialProxyChain(from, handlers)), handlers);
+		return new Proxy(Object.assign(this, createProxyChain(from, handlers)), handlers);
 	}
 
 	/**
@@ -192,25 +192,45 @@ class _ObservableObject<T> {
 export const ObservableObject: ObservableConstructor = _ObservableObject as any;
 
 /**
- * Builds the initial object-proxy composed of proxies objects
- * @param sourceObject
- * @param handlers
+ * Creates a proxy-object chain starting from a raw object
+ * using handlers that will be "propagated" through all the
+ * proxy chain
+ *
+ * @param sourceObject raw object
+ * @param handlers Proxy Handlers
+ * @param parent The parent that has
  */
 
-function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, ...args: any[]): ProxyConstructor {
-	let chain: AnyKindOfObject = {};
+
+function createProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, parent?: string[]) {
+	const chain: AnyKindOfObject = {};
 	const targetObjectKeys = Object.keys(sourceObject);
+
 	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
-		if (typeof sourceObject[prop] === "object" && !Array.isArray(sourceObject[prop])) {
-			chain[prop] = buildInitialProxyChain(sourceObject[prop], Object.assign({}, handlers, {
-				set: bindLast(handlers.set!, ...args, prop)
-			}), ...args, prop);
+		if (typeof sourceObject[prop] === "object") {
+			const parentChain: string[] = [...(parent || []), prop];
+			chain[prop] = createProxyChain(sourceObject[prop], handlers, parentChain);
 		} else {
 			chain[prop] = sourceObject[prop];
-		}
-	}
+        }
+    }
 
-	return new Proxy(chain, handlers);
+	return new Proxy(withParent(chain, [ ...(parent || []) ]), handlers);
+}
+
+/**
+ * Creates a new object with a property called "__parent" in Object
+ * @param value
+ * @param __parent
+ */
+
+function withParent(value: AnyKindOfObject, parents: string[]) {
+	return Object.defineProperty(value, parent, {
+		configurable: false,
+		enumerable: false,
+		writable: false,
+		value: parents
+	});
 }
 
 /**
@@ -219,43 +239,92 @@ function buildInitialProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHa
  * an object, is assigned.
  * The function will compose an object { "x.y.z": value }
  * for each key of each nested object.
- * @param source - Current object
+ * @param newValue - Current object
  * @param args
  */
 
-function buildNotificationChain(current: AnyKindOfObject, source?: AnyKindOfObject, ...args: string[]): AnyKindOfObject {
-	// If our source was valorized and now will be null or undefined
-	let chain: AnyKindOfObject = {};
-	const targetObject = (
-		(source && Object.keys(source).length && source) ||
-		(current && Object.keys(current).length && current) ||
-		{}
-	);
-	const targetObjectKeys = Object.keys(targetObject);
+function buildNotificationChain(currentValue: any, newValue?: any, ...args: string[]): AnyKindOfObject | typeof newValue {
+	const parentsChain = args.join(".");
 
-	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
-		const realSource = source && source[prop] || undefined;
-		chain[[...args, prop].join(".")] = realSource;
-
-		if (targetObject && targetObject[prop] && typeof targetObject[prop] === "object" && !Array.isArray(targetObject[prop])) {
-			Object.assign(chain, buildNotificationChain(current[prop], realSource, ...args, prop))
+	if (typeof newValue === "object") {
+		/**
+		 * What changed in the new object
+		 * since current one?
+		 */
+		return getDiff(currentValue, newValue, parentsChain);
+	} else if (typeof newValue !== "object" && typeof currentValue === "object") {
+		/**
+		 * Opposite difference.
+		 * The result will be all the
+		 * currentValue's value keys set to undefined.
+		 */
+		return getDiff(newValue, currentValue, parentsChain);
+	} else {
+		/**
+		 * Nothing to iterate into. The only
+		 * notification to be fired is the one
+		 * of the single prop
+		 */
+		return { [parentsChain]: newValue };
 		}
 	}
 
-	return chain;
+/**
+ * Obtains the keys/value difference in dot-notation
+ * between two object
+ *
+ * @param source
+ * @param different
+ * @param parent
+ */
+
+function getDiff(source: AnyKindOfObject, different: AnyKindOfObject, parent: string) {
+	let diffChain: AnyKindOfObject = {};
+
+	/**
+	 * Let's merge all the keys and remove
+	 * the duplicates to iterate all only once.
+	 */
+
+	const keysUnion = Array.from(new Set([...Object.keys(source || {}), ...Object.keys(different || {})]));
+	const object = "object";
+
+	for (let i = keysUnion.length, key; key = keysUnion[--i];) {
+		const keyWithParents = parent ? `${parent}.${key}` : key;
+
+		if (!source || !different) {
+			diffChain[keyWithParents] = (different || {})[key] || undefined;
 }
 
 /**
- * Creates a function that accepts default arguments
- * with some other trailing arbitrary dev-defined arguments
- *
- * E.g. Setter receives the following arguments: obj, prop, value, receiver.
- * We wrap the original function in another one that adds the arguments;
- *
- * @param {Function} fn - the original function
- * @param {any[]} boundArgs - the arbitrary arguments
+		 * Keys can be absent only on one of the two
+		 * as we are iterating on a union of both's keys
+		 */
+		if (!different[key] || !source[key]) {
+			diffChain[keyWithParents] = different[key];
+		} else {
+			if (typeof source[key] === object || different[key] !== source[key]) {
+				if (typeof different[key] !== object || different[key] instanceof Array) {
+					diffChain[keyWithParents] = different[key];
+				} else {
+					if (typeof source[key] !== typeof different[key]) {
+						/**
+						 * if the whole object changed
+						 * we want to have a reference
+						 * to the object prop that changed
+						 * like a.b.d
  */
+						diffChain[keyWithParents] = different[key];
+					}
 
-function bindLast(fn: Function, ...boundArgs: any[]) {
-	return (...args: [Object, string, any, any?]) => fn(...args, ...boundArgs);
+                    Object.assign(
+						diffChain,
+						getDiff(source[key], different[key], keyWithParents)
+					);
+				}
+            }
+		}
+	}
+
+	return diffChain;
 }
