@@ -75,6 +75,18 @@ describe("Registration and changes observation:", () => {
 
 		oo.b.d!.e = 42;
 	});
+
+	it("Deleting a property should create notifications", () => {
+		oo.observe("b.d.f.g").subscribe({
+			next: (newValue: any) => {
+				expect(newValue).toBeUndefined();
+				expect(oo.b.d!.f.g).toBeUndefined();
+				expect(oo.b.d!.f).toBeUndefined();
+			}
+		});
+
+		delete oo.b.d!.f;
+	})
 });
 
 describe("Custom Proxy handler:", () => {

@@ -119,8 +119,29 @@ class _ObservableObject<T> {
 				const propsChain = [...(target[parent] || []), prop];
 				const notificationChain = buildNotificationChain(target[prop], undefined, ...propsChain);
 
-				this.__fireNotifications(notificationChain);
-				return (this[customTraps].deleteProperty || Reflect.deleteProperty)(target, prop);
+				/**
+				 * First we delete the property,
+				 * then we fire the notifications
+				 * (only if deletion went successfully).
+				 * If there's a custom deleteProperty, it
+				 * will handle deletion and its result
+				 * will determine if notifications should
+				 * be fired or not.
+				 */
+
+				let deleted: boolean;
+
+				if (this[customTraps].deleteProperty) {
+					deleted = this[customTraps].deleteProperty!(target, prop);
+				} else {
+					deleted = Reflect.deleteProperty(target, prop);
+				}
+
+				if (deleted) {
+					this.__fireNotifications(notificationChain);
+				}
+
+				return deleted;
 			}
 		});
 
