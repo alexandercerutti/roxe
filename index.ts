@@ -310,7 +310,7 @@ function buildNotificationChain(currentValue: any, newValue?: any, ...args: stri
 		 * The result will be all the
 		 * currentValue's value keys set to undefined.
 		 */
-		return getDiff(newValue, currentValue, parentsChain);
+		return getDiff(currentValue, undefined, parentsChain);
 	} else {
 		/**
 		 * Nothing to iterate into. The only
@@ -330,51 +330,107 @@ function buildNotificationChain(currentValue: any, newValue?: any, ...args: stri
  * @param parent
  */
 
-function getDiff(source: AnyKindOfObject, different: AnyKindOfObject, parent: string) {
-	let diffChain: AnyKindOfObject = {};
+function getDiff(original: any, version: any, parents: string) {
+	const chain: AnyKindOfObject = {};
 
-	/**
-	 * Let's merge all the keys and remove
-	 * the duplicates to iterate all only once.
-	 */
+	if (!original && !version) {
+		return chain;
+	}
 
-	const keysUnion = Array.from(new Set([...Object.keys(source || {}), ...Object.keys(different || {})]));
-	const object = "object";
+	if (!original || !version) {
+		return getValuedOrUndefinedDiffChain(original, version, parents);
+	}
+
+	const keysUnion = Array.from(
+		new Set([
+			...Object.keys(original|| {}),
+			...Object.keys(version || {})
+		])
+	);
 
 	for (let i = keysUnion.length, key; key = keysUnion[--i];) {
-		const keyWithParents = parent ? `${parent}.${key}` : key;
+		const keyWithParents = parents ? `${parents}.${key}` : key;
+		const isCurrentVersionKeyObject = typeof version === "object" && typeof version[key] === "object";
+		const isCurrentOriginalKeyObject = typeof original === "object" && typeof original[key] === "object";
 
-		if (!source || !different) {
-			diffChain[keyWithParents] = undefined;
-		} else if (!different[key] || !source[key]) {
-			/**
-			 * Keys can be absent only on one of the two
-			 * as we are iterating on a union of both's keys
-			 */
-			diffChain[keyWithParents] = different[key];
-		} else {
-			if (typeof source[key] === object || different[key] !== source[key]) {
-				if (typeof different[key] !== object || different[key] instanceof Array) {
-					diffChain[keyWithParents] = different[key];
-				} else {
-					if (typeof source[key] !== typeof different[key]) {
-						/**
-						 * if the whole object changed
-						 * we want to have a reference
-						 * to the object prop that changed
-						 * like a.b.d
-						 */
-						diffChain[keyWithParents] = different[key];
-					}
-
-                    Object.assign(
-						diffChain,
-						getDiff(source[key], different[key], keyWithParents)
-					);
+		if (original[key] && version[key]) {
+			if (typeof original[key] === typeof version[key]) {
+				if (isCurrentOriginalKeyObject) {
+					// If we get here, both oldValue and newValue are objects
+					Object.assign(chain, getDiff(original[key], version[key], keyWithParents));
 				}
-            }
+			} else {
+				if (isCurrentOriginalKeyObject) {
+					Object.assign(chain, objectToDiffChain(original[key], keyWithParents, true));
+				} else if (isCurrentVersionKeyObject) {
+					Object.assign(chain, objectToDiffChain(version[key], keyWithParents, false));
+				}
+			}
+
+			chain[keyWithParents] = version[key];
+		} else {
+			// If one is missing...
+			Object.assign(chain, getValuedOrUndefinedDiffChain(original[key], version[key], keyWithParents));
 		}
 	}
 
-	return diffChain;
+	return chain;
+}
+
+/**
+ * We select an object and iterate through it
+ * to get all its properties (and nested ones)
+ * in chain format a.b.c.
+ *
+ * If "allUndefined" is true, undefined is used
+ * as value to all the keys. Otherwise their values are used.
+ *
+ * @param original
+ * @param parents
+ * @param allUndefined
+ */
+
+function objectToDiffChain(original: AnyKindOfObject, parents: string, allUndefined: boolean = false) {
+	const chain: AnyKindOfObject = {};
+
+	const keys = Object.keys(original);
+	for (let i = keys.length, value; value = keys[--i];) {
+		const keyWithParents = parents ? `${parents}.${value}` : value;
+
+		if (typeof original[value] === "object" && !(original[value] instanceof Array)) {
+			Object.assign(chain, objectToDiffChain(original[value], keyWithParents, allUndefined));
+		}
+
+		chain[keyWithParents] = !allUndefined ? original[value] : undefined;
+	}
+
+	return chain;
+}
+
+/**
+ * If one of the two objects is missing,
+ * we use the other one to create a diff
+ * chain with the new value or undefined
+ *
+ * @param original
+ * @param version
+ * @param parents
+ */
+
+function getValuedOrUndefinedDiffChain(original: any, version: any, parents: string) {
+	const chain: AnyKindOfObject = {};
+
+	chain[parents] = (!original && version) || undefined;
+
+	if (original && !version) {
+		if (typeof original === "object") {
+			Object.assign(chain, objectToDiffChain(original, parents, true));
+		}
+	} else {
+		if (typeof version === "object") {
+			Object.assign(chain, objectToDiffChain(version, parents, false));
+		}
+	}
+
+	return chain;
 }
