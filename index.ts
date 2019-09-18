@@ -253,7 +253,6 @@ export const ObservableObject: ObservableConstructor = _ObservableObject as any;
  * @param parent The parent that has
  */
 
-
 function createProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, parent?: string[]) {
 	const chain: AnyKindOfObject = {};
 	const targetObjectKeys = Object.keys(sourceObject);
@@ -271,9 +270,10 @@ function createProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<
 }
 
 /**
- * Creates a new object with a property called "__parent" in Object
+ * Creates a new object with a property called
+ * "Symbol(__parent)" containing the keys to reach it
  * @param value
- * @param __parent
+ * @param parents
  */
 
 function withParent(value: AnyKindOfObject, parents: string[]) {
