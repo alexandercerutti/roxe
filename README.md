@@ -2,7 +2,7 @@
 
 This is a lightweight utility created to observe changes to complex objects structures. This is mainly designed for event-driven applications, usually with multiple files, that need to execute some side-effects when a common central object changes its status.
 
-It uses the powerfulness of RxJS and ES Proxies to let developers subscribe to changes to every property, also nested ones and arrays, in the observed object.
+It merges the powerfulness of RxJS and ES Proxies to let developers subscribe to changes to every property, also nested ones and arrays, in the observed object.
 
 ___
 
@@ -19,58 +19,69 @@ $ npm install --save roxe
 ### Usage example
 
 
-In this usage example, I'm supposing you are using Typescript to show you the real advantage of this package.
+In this usage example, I'm supposing you are using Typescript to show you the real force of this package.
 
-Instantiate a new class for every external object (not nested ones) you want to observe and pass the descriptive _typescript interface_ to `ObservableObject`'s generic parameter. This will let you, to access to object's properties, like
-`nestedObjects.firstProperty`, without ignoring the errors.
+Instantiate a new class for every root object you want to observe and pass the descriptive _typescript interface_ to `ObservableObject`'s generic parameter. This will let you to access to object's properties, like
+`nestedObjects.foo`, without ignoring the errors.
 
 Observe a specific chain-object (a dotted-separated string, as below) and then... subscribe!!! 🎉🎉🎉💁‍♂️
 
 ```typescript
 interface CustomObject {
 	// here lays you object definition
-	firstProperty: number,
-	secondProperty: {
-		third: number,
-		fiftyfive: {
-			anotherNestedProperty: number
+	foo: number,
+	bar: {
+		baz: number,
+		beer: {
+			beersAmount: number
 		}
 	}
 }
 
 const nestedObjects = new ObservableObject<CustomObject>({
-	firstProperty: 5,
-	secondProperty: {
-		third: 7,
-		fiftyfive: {
-			anotherNestedProperty: 55
+	foo: 5,
+	bar: {
+		baz: 7,
+		beer: {
+			beersAmount: 55
 		}
 	}
 });
 
 // Subscribe to the object changes.
 
-const firstPropertyObserver = nestedObjects.observe("firstProperty");
+const firstPropertyObserver = nestedObjects.observe("foo");
 const subscription = firstPropertyObserver.subscribe({
 	next: (newValue => {
-		console.log("first property changed!");
+		console.log("'foo' property changed!");
 	});
 });
 
-const sub1 = nestedObjects.observe("secondProperty.fiftyfive.anotherNestedProperty")
+const sub1 = nestedObjects.observe("bar.beer.beersAmount")
 	.subscribe( ... );
 
 
 // Else where, edit this object.
 
-nestedObjects.firstProperty = 1;
+nestedObjects.foo = 1;
 
-nestedObjects.secondProperty = {
-	third: 3,
-	fiftyfive: {
-		anotherNestedProperty: 4;
+// Now drinking a beer and probably something else
+nestedObjects.bar = {
+	baz: 3,
+	beer: {
+		beersAmount: 4;
 	}
-}
+};
+
+delete nestedObjects.bar;
+/**
+ * Result:
+ * Notification of 'undefined' for
+ * `bar.baz`,
+ * `bar.beer`,
+ * `bar.beer.beersAmount`
+ * if they have been subscribed by someone
+ */
 ```
 
 <br>
@@ -218,7 +229,7 @@ $ npm test
 ___
 ### Caveats
 
-This project compiles to a `CommonJS` module as the original project this comes from (see below), used Webpack, which does not digest `UMD` modules (using some loaders was breaking the debugging process for some reasons). If you'll need to get the UMD version, I have prepared an npm script to achieve this. Follow the script below:
+This project compiles to a `CommonJS` module as the original project this comes from (see below), used Webpack, which does not digest `UMD` modules (using some loaders was breaking the debugging process for some reasons). If you'll need to get the UMD version, an npm script to achieve this has been made available. Follow the script below:
 
 ```sh
 # !! change to the folder you want to clone into, first !!
@@ -227,7 +238,10 @@ cd roxe;
 npm run build:umd;
 ```
 
-This will output a new `umd/` folder with the generated files. To conclude the process, copy the whole content of `umd/` to a new `roxe` folder in your project. I suggest you to create a link and/or commit this package on your repo to avoid losing it.
+This will output a new `umd/` folder with the generated files. To conclude the process, copy the whole content of `umd/` to a new `roxe` folder in your project and create a link or commit it this package on your repo to avoid losing it.
+
+Another caveat is about the weight of this package. To be powerful, this package brings with it, as dependency, the whole Rx.JS library.
+So, even if this library weights few KBs, Rx.JS contributes a lot to the general weight. This package might be considered as an extension for RxJS, but it won't have RxJS as `peerDependency` to allow everyone to use it in every context.
 
 ___
 ### Credits ⭐
