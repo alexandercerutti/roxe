@@ -392,7 +392,7 @@ function objectToDiffChain(original: AnyKindOfObject, parents: string, allUndefi
 	for (let i = keys.length, value; value = keys[--i];) {
 		const keyWithParents = parents ? `${parents}.${value}` : value;
 
-		if (typeof original[value] === "object" && !(original[value] instanceof Array)) {
+		if (typeof original[value] === "object") {
 			Object.assign(chain, objectToDiffChain(original[value], keyWithParents, allUndefined));
 		}
 
