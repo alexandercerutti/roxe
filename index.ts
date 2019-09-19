@@ -254,35 +254,31 @@ export const ObservableObject: ObservableConstructor = _ObservableObject as any;
  */
 
 function createProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, parent?: string[]) {
-	const chain: AnyKindOfObject = {};
-	const targetObjectKeys = Object.keys(sourceObject);
+	const descriptors = Object.getOwnPropertyDescriptors(sourceObject);
+	const targetObjectKeys = Object.keys(descriptors);
 
 	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
 		if (typeof sourceObject[prop] === "object") {
 			const parentChain: string[] = [...(parent || []), prop];
-			chain[prop] = createProxyChain(sourceObject[prop], handlers, parentChain);
-		} else {
-			chain[prop] = sourceObject[prop];
+			descriptors[prop].value = createProxyChain(sourceObject[prop], handlers, parentChain);
         }
     }
 
-	return new Proxy(withParent(chain, [ ...(parent || []) ]), handlers);
+	const parented = Object.assign({
+		[Symbol.for("__parent")]: {
+			value: parent,
+			enumerable: false,
+			writable: false,
+			configurable: false
 }
+	}, descriptors);
 
-/**
- * Creates a new object with a property called
- * "Symbol(__parent)" containing the keys to reach it
- * @param value
- * @param parents
- */
+	const chain = Object.create(
+		Object.getPrototypeOf(sourceObject) || {},
+		parented
+	);
 
-function withParent(value: AnyKindOfObject, parents: string[]) {
-	return Object.defineProperty(value, parent, {
-		configurable: false,
-		enumerable: false,
-		writable: false,
-		value: parents
-	});
+	return new Proxy(chain, handlers);
 }
 
 /**
