@@ -260,8 +260,8 @@ function createProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<
 		if (typeof sourceObject[prop] === "object") {
 			const parentChain: string[] = [...(parent || []), prop];
 			descriptors[prop].value = createProxyChain(sourceObject[prop], handlers, parentChain);
-        }
-    }
+		}
+	}
 
 	const parented = Object.assign({
 		[Symbol.for("__parent")]: {
@@ -269,7 +269,7 @@ function createProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<
 			enumerable: false,
 			writable: false,
 			configurable: false
-}
+		}
 	}, descriptors);
 
 	const chain = Object.create(

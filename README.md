@@ -1,6 +1,8 @@
 # Roxe
 
-This is a lightweight utility created to observe changes to complex objects structures. This is mainly designed for event-driven applications, usually with multiple files, that need to execute some side-effects when a common central object changes its status.
+This is a lightweight utility created to observe changes to complex objects structures. This is mainly designed for event-driven applications, usually with multiple files, that need to execute some chunks of code when a common central object changes its status or its properties change.
+
+It allows to listen to generic Object, nested object, Arrays, arrays' values, Objects in Arrays, Objects in Objects in Array changes and so on.
 
 It merges the powerfulness of RxJS and ES Proxies to let developers subscribe to changes to every property, also nested ones and arrays, in the observed object.
 
@@ -18,7 +20,6 @@ $ npm install --save roxe
 
 ### Usage example
 
-
 In this usage example, I'm supposing you are using Typescript to show you the real force of this package.
 
 Instantiate a new class for every root object you want to observe and pass the descriptive _typescript interface_ to `ObservableObject`'s generic parameter. This will let you to access to object's properties, like
@@ -29,12 +30,16 @@ Observe a specific chain-object (a dotted-separated string, as below) and then..
 ```typescript
 interface CustomObject {
 	// here lays you object definition
-	foo: number,
+	foo: number;
 	bar: {
-		baz: number,
+		baz: number;
 		beer: {
 			beersAmount: number
-		}
+		};
+		valueSet: Array<{
+			value: number;
+			[key: string]: any;
+		}>;
 	}
 }
 
@@ -44,7 +49,12 @@ const nestedObjects = new ObservableObject<CustomObject>({
 		baz: 7,
 		beer: {
 			beersAmount: 55
-		}
+		},
+		valueSet: [
+			{ value: 3 },
+			{ value: 4 },
+			{ value: 5 }
+		],
 	}
 });
 
@@ -60,10 +70,25 @@ const subscription = firstPropertyObserver.subscribe({
 const sub1 = nestedObjects.observe("bar.beer.beersAmount")
 	.subscribe( ... );
 
+const valueSetAmountSubscription = nestedObjects.observe("bar.valueSet.length").subscribe({
+	next: (length: number) => {
+		console.log(`valueSet amount just changed to ${length}`);
+	}
+});
+
+const valueSetElementValueSubscription = nestedObjects.observe("bar.valueSet.3.value").subscribe({
+	next: (newValue: number) => {
+		console.log(`bar.valueSet's fourth element has been just added or has its 'value' field changed to ${newValue}`);
+	}
+})
 
 // Else where, edit this object.
 
 nestedObjects.foo = 1;
+
+/** Notification Result:
+ * `foo: 3`
+ */
 
 // Now drinking a beer and probably something else
 nestedObjects.bar = {
@@ -73,14 +98,19 @@ nestedObjects.bar = {
 	}
 };
 
+/** Notifications Result:
+ * `bar.baz: 3`,
+ * `bar.beer: { beersAmount: 4 }`,
+ * `bar.beer.beersAmount: 4`,
+ * `bar.valueSet: undefined`
+ */
+
 delete nestedObjects.bar;
-/**
- * Result:
- * Notification of 'undefined' for
- * `bar.baz`,
- * `bar.beer`,
- * `bar.beer.beersAmount`
- * if they have been subscribed by someone
+
+/** Notification Result:
+ * `bar.baz: undefined`,
+ * `bar.beer: undefined`,
+ * `bar.beer.beersAmount: undefined`
  */
 ```
 
