@@ -4,7 +4,6 @@ import * as debug from "debug";
 const roxeDebug = debug("roxe");
 const customTraps = Symbol("_customTraps");
 const observedObjects = Symbol("_observedObjects");
-const parent = Symbol("__parent");
 
 export type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
@@ -58,7 +57,7 @@ class _ObservableObject<T> {
 				// is an object)
 
 				// @ts-ignore - symbols can be used as index in js.
-				const propsChain = [...(obj[parent] || []), prop];
+				const propsChain = [...(obj[Symbol.for("__parent")] || []), prop];
 
 				const notificationChain = buildNotificationChain(obj[prop], value, ...propsChain);
 
@@ -116,7 +115,7 @@ class _ObservableObject<T> {
 				return true;
 			},
 			deleteProperty: (target: any, prop: string | number | symbol): boolean => {
-				const propsChain = [...(target[parent] || []), prop];
+				const propsChain = [...(target[Symbol.for("__parent")] || []), prop];
 				const notificationChain = buildNotificationChain(target[prop], undefined, ...propsChain);
 
 				/**
