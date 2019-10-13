@@ -1,7 +1,8 @@
 {
   "spec_dir": "spec",
   "spec_files": [
-    "**/*index.js"
+    "**/index.js",
+    "**/createChainsFromObject.js"
   ],
   "stopSpecOnExpectationFailure": false,
   "random": true
