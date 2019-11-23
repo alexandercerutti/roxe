@@ -1,4 +1,5 @@
 import { createProxyChain } from "../createProxyChain";
+import { AnyKindOfObject } from "..";
 
 describe("Objects", () => {
 	it("should return a Proxy from an Array", () => {
@@ -52,6 +53,7 @@ describe("Objects", () => {
 		});
 
 		const proxy = createProxyChain(obj, {});
+
 		expect(Object.getOwnPropertyDescriptor(proxy, 'a')).toEqual({
 			value: 42,
 			writable: false,
@@ -86,5 +88,31 @@ describe("Objects", () => {
 			b: 6,
 			c: 7
 		})
+	});
+});
+
+describe("Circular Reference", () => {
+	it("A proxy reference should be created before if a proxy is still not available", () => {
+		const obj: AnyKindOfObject = {
+			a1: {
+				b1: {
+					c1: 5,
+					c2: 6,
+					c3: 7,
+				},
+			}
+		};
+
+		obj.a1.b2 = {
+			c4: obj.a1,
+		};
+
+		// when obj.a1.b2.c4 will be consumed,
+		// a1 will be in the seen map but its proxy
+		// won't be still available
+
+		const proxy = createProxyChain(obj, {});
+
+		expect(proxy.a1).toEqual(proxy.a1.b2.c4);
 	});
 });
