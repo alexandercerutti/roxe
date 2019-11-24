@@ -1,5 +1,6 @@
 import { Subject, Subscription, Observable } from "rxjs";
 import * as debug from "debug";
+import { createProxyChain } from "./createProxyChain";
 
 const roxeDebug = debug("roxe");
 const customTraps = Symbol("_customTraps");
@@ -82,11 +83,7 @@ class _ObservableObject<T> {
 					 * the original `handlers.set` clean from any external argument
 					 */
 
-					obj[prop] = createProxyChain(
-						value,
-						handlers,
-						propsChain
-					);
+					obj[prop] = createProxyChain(value, handlers, undefined, propsChain);
 				} else {
 					/*
 					 * We finalize the path of the keys passed in the above condition
@@ -241,44 +238,6 @@ class _ObservableObject<T> {
 // Workaround to allow us to recognize T's props as part of ObservableObject
 // https://stackoverflow.com/a/54737176/2929433
 export const ObservableObject: ObservableConstructor = _ObservableObject as any;
-
-/**
- * Creates a proxy-object chain starting from a raw object
- * using handlers that will be "propagated" through all the
- * proxy chain
- *
- * @param sourceObject raw object
- * @param handlers Proxy Handlers
- * @param parent The parent that has
- */
-
-function createProxyChain(sourceObject: AnyKindOfObject, handlers: ProxyHandler<any>, parent?: string[]) {
-	const descriptors = Object.getOwnPropertyDescriptors(sourceObject);
-	const targetObjectKeys = Object.keys(descriptors);
-
-	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
-		if (typeof sourceObject[prop] === "object") {
-			const parentChain: string[] = [...(parent || []), prop];
-			descriptors[prop].value = createProxyChain(sourceObject[prop], handlers, parentChain);
-		}
-	}
-
-	const parented = Object.assign({
-		[Symbol.for("__parent")]: {
-			value: parent,
-			enumerable: false,
-			writable: false,
-			configurable: false
-		}
-	}, descriptors);
-
-	const chain = Object.create(
-		Object.getPrototypeOf(sourceObject) || {},
-		parented
-	);
-
-	return new Proxy(chain, handlers);
-}
 
 /**
  * Builds the chain of properties that will be notified.
