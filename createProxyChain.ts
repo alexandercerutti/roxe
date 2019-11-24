@@ -26,8 +26,10 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	}
 
 	/**
-	 * Aliases of sourceObject
-	 * that will link to its proxy
+	 * List of { sourceObject, prop }
+	 * of props that link to a previous
+	 * point of the current chain (circular references);
+	 * These are still raw objects (without proxies).
 	 */
 
 	const circularReferences: AwaitingCircularReference[] = [];
@@ -87,6 +89,12 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 
 	const proxiedChain = new Proxy<T>(chain, handlers);
 
+	/**
+	 * Consuming circular references and assigning in the map,
+	 * in the list at parent[prop], a new object with prop, and
+	 * the new created proxy chain
+	 */
+
 	for (let i=circularReferences.length, cr; cr=circularReferences[--i];) {
 		const { prop, parent } = cr;
 		seenMap.set(parent[prop], [
@@ -94,6 +102,10 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 			{ parent: proxiedChain, aliasName: prop },
 		]);
 	}
+
+	/**
+	 * Assigning current sourceObject's proxy to aliases
+	 */
 
 	const currentObjectAliases = seenMap.get(sourceObject) || [];
 
