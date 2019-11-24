@@ -91,8 +91,8 @@ describe("Objects", () => {
 	});
 });
 
-describe("Circular Reference", () => {
-	it("A proxy reference should be created before if a proxy is still not available", () => {
+describe("Object Tree References", () => {
+	it("should assign an already existing proxy if a circular reference is met, instead of creating a new one", () => {
 		const obj: AnyKindOfObject = {
 			a1: {
 				b1: {
@@ -114,5 +114,30 @@ describe("Circular Reference", () => {
 		const proxy = createProxyChain(obj, {});
 
 		expect(proxy.a1).toEqual(proxy.a1.b2.c4);
+	});
+
+	it("should assign an already existing proxy if a prop points to another object seen in a different branch from the same root tree", () => {
+		const obj: AnyKindOfObject = {
+			a1: {
+				b1: {
+					c1: 5,
+					c2: 6,
+					c3: 7,
+				},
+			},
+			a2: {
+				b2: {
+					d1: 8,
+					d2: 9,
+					d3: 10
+				}
+			}
+		};
+
+		obj.a2.b2.d4 = obj.a1.b1;
+
+		const proxy = createProxyChain(obj, {});
+
+		expect(proxy.a2.b2.d4).toEqual(proxy.a1.b1)
 	});
 });
