@@ -1,5 +1,10 @@
 import { AnyKindOfObject } from ".";
 
+interface ChainMaps<T extends Object = any> {
+	seen?: WeakMap<T, SourceDetails>;
+	all?: WeakMap<T, Set<string>>;
+}
+
 interface SourceDetails {
 	proxy: AnyKindOfObject | undefined;
 	aliases: ProxyAlias[];
@@ -25,10 +30,16 @@ interface AwaitingCircularReference {
  * @param parent The parent that has
  */
 
-export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, handlers: ProxyHandler<any>, seenMap?: WeakMap<T, SourceDetails>, parents?: string[]) {
-	if (!seenMap) {
-		seenMap = new WeakMap<T, SourceDetails>();
+export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, handlers: ProxyHandler<any>, maps: ChainMaps, parents?: string[]) {
+	if (!maps) {
+		maps = {};
 	}
+
+	if (!maps.seen) {
+		maps.seen = new WeakMap<T, SourceDetails>();
+	}
+
+	const { seen, all } = maps;
 
 	/**
 	 * List of { sourceObject, prop }
@@ -45,7 +56,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	 * the Proxy and return it.
 	 */
 
-	seenMap.set(sourceObject, { proxy: undefined, aliases: [] });
+	seen.set(sourceObject, { proxy: undefined, aliases: [] });
 
 	const descriptors = Object.getOwnPropertyDescriptors(sourceObject);
 	const targetObjectKeys = Object.keys(descriptors);
@@ -54,8 +65,8 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 		if (sourceObject[prop] && typeof sourceObject[prop] === "object") {
 			const parentChain = [...(parents || []), prop];
 
-			if (seenMap.has(sourceObject[prop])) {
-				const { proxy } = seenMap.get(sourceObject[prop]) || {} as Partial<SourceDetails>;
+			if (seen.has(sourceObject[prop])) {
+				const { proxy } = seen.get(sourceObject[prop]) || {} as Partial<SourceDetails>;
 
 				if (proxy) {
 					/** Current object has reference in another part of the object chain that has been already created. */
@@ -88,7 +99,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 				}
 			} else {
 				/** The current object has no circular reference - All okay! */
-				const proxyChain = createProxyChain<T>(sourceObject[prop], handlers, seenMap, parentChain);
+				const proxyChain = createProxyChain<T>(sourceObject[prop], handlers, maps, parentChain);
 				descriptors[prop].value = proxyChain;
 			}
 		}
@@ -109,9 +120,9 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 
 	for (let i=circularReferences.length, cr; cr=circularReferences[--i];) {
 		const { prop, parent } = cr;
-		const { proxy, aliases } = seenMap.get(parent[prop]) || {} as Partial<SourceDetails>;
+		const { proxy, aliases } = seen.get(parent[prop]) || {} as Partial<SourceDetails>;
 
-		seenMap.set(parent[prop], {
+		seen.set(parent[prop], {
 			proxy,
 			aliases: [
 				...(aliases || []),
@@ -124,7 +135,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	 * Assigning current sourceObject's proxy to aliases
 	 */
 
-	const { aliases } = seenMap.get(sourceObject) || {} as Partial<SourceDetails>;
+	const { aliases } = seen.get(sourceObject) || {} as Partial<SourceDetails>;
 
 	if (aliases && aliases.length) {
 		for (let i=aliases.length, alias; alias=aliases[--i];) {
@@ -133,8 +144,8 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 		}
 	}
 
-	seenMap.set(sourceObject, {
-		...(seenMap.get(sourceObject) || {} as SourceDetails),
+	seen.set(sourceObject, {
+		...(seen.get(sourceObject) || {} as SourceDetails),
 		proxy: proxiedChain
 	});
 

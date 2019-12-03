@@ -3,7 +3,8 @@ import { AnyKindOfObject } from "..";
 
 describe("Objects", () => {
 	it("should return a Proxy from an Array", () => {
-		const arrayProxy = createProxyChain([9,8,7,6,5], {});
+		const all = new WeakMap();
+		const arrayProxy = createProxyChain([9,8,7,6,5], {}, { all });
 
 		expect(arrayProxy!.hasOwnProperty("length")).toBeTruthy();
         expect(arrayProxy!.length).toBe(5);
@@ -22,7 +23,8 @@ describe("Objects", () => {
 			}
 		};
 
-		const proxy = createProxyChain(obj, {});
+		const all = new WeakMap();
+		const proxy = createProxyChain(obj, {}, { all });
 
 		expect(Object.getPrototypeOf(proxy!.b)).toEqual(Array.prototype);
 		expect(Object.getPrototypeOf(proxy!.c.h)).toEqual(Array.prototype);
@@ -52,7 +54,8 @@ describe("Objects", () => {
 			enumerable: false,
 		});
 
-		const proxy = createProxyChain(obj, {});
+		const all = new WeakMap();
+		const proxy = createProxyChain(obj, {}, { all });
 
 		expect(Object.getOwnPropertyDescriptor(proxy, 'a')).toEqual({
 			value: 42,
@@ -79,7 +82,8 @@ describe("Objects", () => {
 			}
 		};
 
-		const proxy = createProxyChain(obj, {});
+		const all = new WeakMap();
+		const proxy = createProxyChain(obj, {}, { all });
 		// @ts-ignore
 		expect(proxy[Symbol.for("sym")]).toBe(3);
 		// @ts-ignore
@@ -111,7 +115,8 @@ describe("Object Tree References", () => {
 		// a1 will be in the seen map but its proxy
 		// won't be still available
 
-		const proxy = createProxyChain(obj, {});
+		const all = new WeakMap();
+		const proxy = createProxyChain(obj, {}, { all });
 
 		expect(proxy.a1).toEqual(proxy.a1.b2.c4);
 	});
@@ -136,7 +141,8 @@ describe("Object Tree References", () => {
 
 		obj.a2.b2.d4 = obj.a1.b1;
 
-		const proxy = createProxyChain(obj, {});
+		const all = new WeakMap();
+		const proxy = createProxyChain(obj, {}, { all });
 
 		expect(proxy.a2.b2.d4).toEqual(proxy.a1.b1)
 	});
