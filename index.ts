@@ -5,6 +5,9 @@ import { createProxyChain } from "./createProxyChain";
 const roxeDebug = debug("roxe");
 const customTraps = Symbol("_customTraps");
 const observedObjects = Symbol("_observedObjects");
+const weakParents = Symbol("wkp");
+
+export type WKP = WeakMap<AnyKindOfObject, Set<string>>;
 
 export type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
@@ -22,6 +25,7 @@ interface AnyKindOfObject {
 class _ObservableObject<T> {
 	private [observedObjects]: Observed;
 	private [customTraps]: ProxyHandler<Object>;
+	private [weakParents]: WKP;
 
 	constructor(from: T = <T>{}, optHandlers: ProxyHandler<any> = {}) {
 		Object.defineProperties(this, {
@@ -36,6 +40,12 @@ class _ObservableObject<T> {
 				writable: false,
 				configurable: false,
 				enumerable: false,
+			},
+			[weakParents]: {
+				value: (new WeakMap() as WKP),
+				writable: false,
+				configurable: false,
+				enumerable: false
 			}
 		});
 
@@ -83,7 +93,7 @@ class _ObservableObject<T> {
 					 * the original `handlers.set` clean from any external argument
 					 */
 
-					obj[prop] = createProxyChain(value, handlers, undefined, propsChain);
+					obj[prop] = createProxyChain(value, handlers, { all: this[weakParents] }, propsChain);
 				} else {
 					/*
 					 * We finalize the path of the keys passed in the above condition
@@ -141,7 +151,7 @@ class _ObservableObject<T> {
 			}
 		});
 
-		return new Proxy(Object.assign(this, createProxyChain(from, handlers)), handlers);
+		return new Proxy(Object.assign(this, createProxyChain(from, handlers, { all: this[weakParents] })), handlers);
 	}
 
 	/**
