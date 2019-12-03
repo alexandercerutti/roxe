@@ -57,6 +57,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	 */
 
 	seen.set(sourceObject, { proxy: undefined, aliases: [] });
+	setAllMap.call(all, sourceObject, [...parents || []].join(".") || null)
 
 	const descriptors = Object.getOwnPropertyDescriptors(sourceObject);
 	const targetObjectKeys = Object.keys(descriptors);
@@ -64,6 +65,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
 		if (sourceObject[prop] && typeof sourceObject[prop] === "object") {
 			const parentChain = [...(parents || []), prop];
+			setAllMap.call(all, sourceObject[prop], parentChain.join(".") || null);
 
 			if (seen.has(sourceObject[prop])) {
 				const { proxy } = seen.get(sourceObject[prop]) || {} as Partial<SourceDetails>;
@@ -75,7 +77,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 					/**
 					 * Current object has circular reference but the proxy have not been created yet.
 					 * The idea is to save a list of current prop and their parent object (sourceObject)
-					 * in the SeenMap, so we can iterate them at the end of every map object and
+					 * in the maps.seen, so we can iterate them at the end of every map object and
 					 * assign to its aliases (sourceObject[prop]) the newly created proxy.
 					 *
 					 * So, a single list object might be composed as `{ sourceObject, prop }`, but at
@@ -86,7 +88,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 					 * Therefore we delete first the current prop from descriptors and then save
 					 * in another list (circularReferences), this list object `{ sourceObject, prop }`.
 					 * At the end of the current "session", we'll use them to set in
-					 * SeenMap @ sourceObject[prop] a list of { proxy, prop } that will be used
+					 * maps.seen @ sourceObject[prop] a list of { proxy, prop } that will be used
 					 * for the above-described goal.
 					 */
 
@@ -150,4 +152,10 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	});
 
 	return proxiedChain;
+}
+
+function setAllMap(this: WeakMap<any, Set<string>>, object: AnyKindOfObject, value: string) {
+	const currentValues = this.get(object) || new Set();
+	currentValues.add(value);
+	this.set(object, currentValues);
 }
