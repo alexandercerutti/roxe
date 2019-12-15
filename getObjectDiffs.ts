@@ -1,18 +1,42 @@
 import { createChainFromObject } from "./createChainsFromObject";
 import { AnyKindOfObject } from ".";
 
+/**
+ * Creates a new object with the differences among
+ * two objects and their props.
+ * The object is formatted as { a.b.c: <value> }
+ *
+ * @param origin
+ * @param version
+ * @param parents
+ */
+
 export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 	if (!(origin || version) || origin === version) {
 		return {};
 	}
 
 	if (!version) {
+		/**
+		 * Value has been removed. We create a chain
+		 * with all props of origin to undefined
+		 */
 		return createChainFromObject(origin, parents, true) || {};
 	}
 
 	if (!origin) {
+		/**
+		 * Value has been created. We create a chain
+		 * with all props of version and their version
+		 */
 		return createChainFromObject(version, parents, false) || {};
 	}
+
+	/**
+	 * Both origin and version exist. We have to calculate
+	 * the difference. We are going to check their types,
+	 * their props, their props types and so on.
+	 */
 
 	const chain: AnyKindOfObject = {};
 
@@ -28,32 +52,58 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 		const propChain = parentedProp.join(".");
 
 		if (!origin[prop]) {
+			/**
+			 * Current prop exists only in version (new prop).
+			 * We create a new props chain starting from prop in version.
+			 */
 			Object.assign(chain, createChainFromObject(version[prop], parentedProp, false) || {});
 			chain[propChain] = version[prop];
 		} else if (!version[prop]) {
+			/**
+			 * Current prop has been removed in version (old prop).
+			 * We create a chain of old props in this object to undefined.
+			 */
 			Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true) || {});
 			chain[propChain] = undefined;
 		} else {
+			/**
+			 * Prop exists in both.
+			 * Oh shit.
+			 */
 			if (typeof origin[prop] === typeof version[prop] && typeof origin[prop] === "object") {
 				const diffs = getObjectDiffs(origin[prop], version[prop], parentedProp);
 
+				/**
+				 * If diffs is an empty object, no diff were
+				 * found. Therefore we don't have to do anything.
+				 * We register the diffs in the current chain, otherwise.
+				 */
+
 				if (diffs && Object.keys(diffs).length) {
-					// If diffs is an empty object,
-					// no diff were found. Therefore
-					// we don't have to do anything
 					Object.assign(chain, diffs);
 					chain[propChain] = version[prop];
 				}
 			} else if (typeof origin[prop] === "object") {
-				// Origin and version are different
+				/**
+				 * Prop(s) in Origin and version have different types.
+				 * Here origin is an object and version is not.
+				 * We create an old prop to undefined chain from origin[prop]
+				 */
 				Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true) || {});
 				chain[propChain] = version[prop];
 			} else if (typeof version[prop] === "object") {
-				// Origin and version are different
-				Object.assign(chain, createChainFromObject(version[prop], parentedProp, false) || {});
+				/**
+				 * Prop(s) in Origin and version have different types.
+				 * Here version is an object and origin is not.
+				 * We create a new prop chain from version[prop]
+				 */
+				 Object.assign(chain, createChainFromObject(version[prop], parentedProp, false) || {});
 				chain[propChain] = version[prop];
 			} else if (version[prop] !== origin[prop]) {
-				// Origin and version might be equal
+				/**
+				 * They have both type and value different.
+				 * None is an object.
+				 */
 				chain[propChain] = version[prop];
 			}
 		}
