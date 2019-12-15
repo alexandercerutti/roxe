@@ -7,11 +7,11 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 	}
 
 	if (!version) {
-		return createChainFromObject(origin, parents, true);
+		return createChainFromObject(origin, parents, true) || {};
 	}
 
 	if (!origin) {
-		return createChainFromObject(version, parents, false);
+		return createChainFromObject(version, parents, false) || {};
 	}
 
 	const chain: AnyKindOfObject = {};
@@ -28,10 +28,10 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 		const propChain = parentedProp.join(".");
 
 		if (!origin[prop]) {
-			Object.assign(chain, createChainFromObject(version[prop], parentedProp, false));
+			Object.assign(chain, createChainFromObject(version[prop], parentedProp, false) || {});
 			chain[propChain] = version[prop];
 		} else if (!version[prop]) {
-			Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true));
+			Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true) || {});
 			chain[propChain] = undefined;
 		} else {
 			if (typeof origin[prop] === typeof version[prop] && typeof origin[prop] === "object") {
@@ -46,11 +46,11 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 				}
 			} else if (typeof origin[prop] === "object") {
 				// Origin and version are different
-				Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true));
+				Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true) || {});
 				chain[propChain] = version[prop];
 			} else if (typeof version[prop] === "object") {
 				// Origin and version are different
-				Object.assign(chain, createChainFromObject(version[prop], parentedProp, false));
+				Object.assign(chain, createChainFromObject(version[prop], parentedProp, false) || {});
 				chain[propChain] = version[prop];
 			} else if (version[prop] !== origin[prop]) {
 				// Origin and version might be equal
