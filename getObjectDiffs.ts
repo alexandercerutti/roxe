@@ -56,12 +56,20 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 			 * We create a new props chain starting from prop in version.
 			 * version[prop] might not be an object
 			 */
+			if (typeof version[prop] === "object") {
+				Object.assign(chains, createChainFromObject(version[prop], parentChains, false) || {});
+			}
+
 			parentChains.forEach(c => chains[c] = version[prop]);
 		} else if (!version[prop]) {
 			/**
 			 * Current prop has been removed in version (old prop).
 			 * We create a chain of old props in this object to undefined.
 			 */
+			if (typeof origin[prop] === "object") {
+				Object.assign(chains, createChainFromObject(origin[prop], parentChains, true) || {});
+			}
+
 			parentChains.forEach(c => chains[c] = undefined);
 		} else {
 			/**
@@ -78,6 +86,7 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 				 */
 
 				if (diffs && Object.keys(diffs).length) {
+					Object.assign(chains, diffs);
 					parentChains.forEach(c => chains[c] = version[prop]);
 				}
 			} else if (typeof origin[prop] === "object") {
@@ -86,6 +95,7 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 				 * Here origin is an object and version is not.
 				 * We create an old prop to undefined chain from origin[prop]
 				 */
+				Object.assign(chains, createChainFromObject(origin[prop], parentChains, true) || {});
 				parentChains.forEach(c => chains[c] = version[prop]);
 			} else if (typeof version[prop] === "object") {
 				/**
@@ -93,6 +103,7 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 				 * Here version is an object and origin is not.
 				 * We create a new prop chain from version[prop]
 				 */
+				 Object.assign(chains, createChainFromObject(version[prop], parentChains, false) || {});
 				 parentChains.forEach(c => chains[c] = version[prop]);
 			} else if (version[prop] !== origin[prop]) {
 				/**
