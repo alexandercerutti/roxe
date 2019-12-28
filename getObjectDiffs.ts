@@ -38,7 +38,7 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 	 * their props, their props types and so on.
 	 */
 
-	const chain: AnyKindOfObject = {};
+	const chains: AnyKindOfObject = {};
 
 	const targetObjectKeys = Array.from(
 		new Set([
@@ -47,24 +47,21 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 		])
 	);
 
-	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
-		const parentedProp = [ ...(parents || []), prop ];
-		const propChain = parentedProp.join(".");
+	for (let i = targetObjectKeys.length, prop: string; prop = targetObjectKeys[--i];) {
+		const parentChains = parents && parents.map(c => `${c}.${prop}`) || [prop];
 
 		if (!origin[prop]) {
 			/**
 			 * Current prop exists only in version (new prop).
 			 * We create a new props chain starting from prop in version.
 			 */
-			Object.assign(chain, createChainFromObject(version[prop], parentedProp, false) || {});
-			chain[propChain] = version[prop];
+			parentChains.forEach(c => chains[c] = version[prop]);
 		} else if (!version[prop]) {
 			/**
 			 * Current prop has been removed in version (old prop).
 			 * We create a chain of old props in this object to undefined.
 			 */
-			Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true) || {});
-			chain[propChain] = undefined;
+			parentChains.forEach(c => chains[c] = undefined);
 		} else {
 			/**
 			 * Prop exists in both.
@@ -80,8 +77,7 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 				 */
 
 				if (diffs && Object.keys(diffs).length) {
-					Object.assign(chain, diffs);
-					chain[propChain] = version[prop];
+					parentChains.forEach(c => chains[c] = version[prop]);
 				}
 			} else if (typeof origin[prop] === "object") {
 				/**
@@ -89,25 +85,23 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 				 * Here origin is an object and version is not.
 				 * We create an old prop to undefined chain from origin[prop]
 				 */
-				Object.assign(chain, createChainFromObject(origin[prop], parentedProp, true) || {});
-				chain[propChain] = version[prop];
+				parentChains.forEach(c => chains[c] = version[prop]);
 			} else if (typeof version[prop] === "object") {
 				/**
 				 * Prop(s) in Origin and version have different types.
 				 * Here version is an object and origin is not.
 				 * We create a new prop chain from version[prop]
 				 */
-				 Object.assign(chain, createChainFromObject(version[prop], parentedProp, false) || {});
-				chain[propChain] = version[prop];
+				 parentChains.forEach(c => chains[c] = version[prop]);
 			} else if (version[prop] !== origin[prop]) {
 				/**
 				 * They have both type and value different.
 				 * None is an object.
 				 */
-				chain[propChain] = version[prop];
+				parentChains.forEach(c => chains[c] = version[prop]);
 			}
 		}
 	}
 
-	return chain;
+	return chains;
 }

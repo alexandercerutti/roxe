@@ -57,15 +57,13 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	 */
 
 	seen.set(sourceObject, { proxy: undefined, aliases: [] });
-	setAllMap.call(all, sourceObject, [...parents || []].join(".") || null)
 
 	const descriptors = Object.getOwnPropertyDescriptors(sourceObject);
 	const targetObjectKeys = Object.keys(descriptors);
 
 	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
 		if (sourceObject[prop] && typeof sourceObject[prop] === "object") {
-			const parentChain = [...(parents || []), prop];
-			setAllMap.call(all, sourceObject[prop], parentChain.join(".") || null);
+			const parentChains = parents && parents.map(c => `${c}.${prop}`) || [prop];
 
 			if (seen.has(sourceObject[prop])) {
 				const { proxy } = seen.get(sourceObject[prop]) || {} as Partial<SourceDetails>;
@@ -73,6 +71,10 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 				if (proxy) {
 					/** Current object has reference in another part of the object chain that has been already created. */
 					descriptors[prop].value = proxy;
+					parentChains.forEach(c => {
+						const currentValues = (all.get(proxy) || new Set<string>()).add(c);
+						all.set(proxy, currentValues);
+					});
 				} else {
 					/**
 					 * Current object has circular reference but the proxy have not been created yet.
@@ -103,6 +105,10 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 				/** The current object has no circular reference - All okay! */
 				const proxyChain = createProxyChain<T>(sourceObject[prop], handlers, maps, parentChain);
 				descriptors[prop].value = proxyChain;
+				parentChains.forEach(c => {
+					const currentValues = (all.get(proxyChain) || new Set<string>()).add(c);
+					all.set(proxyChain, currentValues);
+				});
 			}
 		}
 	}
@@ -113,6 +119,13 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	) as T;
 
 	const proxiedChain = new Proxy<T>(chain, handlers);
+
+	if (parents && parents.length) {
+		parents.forEach(c => {
+			const currentValues = (all.get(proxiedChain) || new Set<string>()).add(c);
+			all.set(proxiedChain, currentValues);
+		});
+	}
 
 	/**
 	 * Consuming circular references and assigning in the map,
@@ -154,8 +167,3 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	return proxiedChain;
 }
 
-function setAllMap(this: WeakMap<any, Set<string>>, object: AnyKindOfObject, value: string) {
-	const currentValues = this.get(object) || new Set();
-	currentValues.add(value);
-	this.set(object, currentValues);
-}

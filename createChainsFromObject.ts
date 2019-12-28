@@ -21,18 +21,18 @@ export function createChainFromObject(obj: AnyKindOfObject, parents?: string[], 
 		return undefined;
 	}
 
-	for (let i = objKeys.length, prop; prop = objKeys[--i];) {
-		const currentChain = [ ...(parents || []), prop ];
-		const propChain = currentChain.join(".");
+	for (let i = objKeys.length, prop: string; prop = objKeys[--i];) {
+		const parentChains = parents && parents.map(c => `${c}.${prop}`) || [prop];
 
 		if (typeof obj[prop] === "object") {
 			Object.assign(
 				chains,
-				createChainFromObject(obj[prop], currentChain, isUndefined)
+				createChainFromObject(obj[prop], parentChains, isUndefined)
 			);
 		}
 
-		chains[propChain] = isUndefined ? undefined : obj[prop];
+		const newValue = isUndefined ? undefined : obj[prop];
+		parentChains.forEach(c => chains[c] = newValue);
 	}
 
 	return chains;
