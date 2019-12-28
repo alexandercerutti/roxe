@@ -2,7 +2,7 @@ import { AnyKindOfObject } from ".";
 
 interface ChainMaps<T extends Object = any> {
 	seen?: WeakMap<T, SourceDetails>;
-	all?: WeakMap<T, Set<string>>;
+	all: WeakMap<T, Set<string>>;
 }
 
 interface SourceDetails {
@@ -31,10 +31,6 @@ interface AwaitingCircularReference {
  */
 
 export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, handlers: ProxyHandler<any>, maps: ChainMaps, parents?: string[]) {
-	if (!maps) {
-		maps = {};
-	}
-
 	if (!maps.seen) {
 		maps.seen = new WeakMap<T, SourceDetails>();
 	}
@@ -61,7 +57,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	const descriptors = Object.getOwnPropertyDescriptors(sourceObject);
 	const targetObjectKeys = Object.keys(descriptors);
 
-	for (let i = targetObjectKeys.length, prop; prop = targetObjectKeys[--i];) {
+	for (let i = targetObjectKeys.length, prop: string; prop = targetObjectKeys[--i];) {
 		if (sourceObject[prop] && typeof sourceObject[prop] === "object") {
 			const parentChains = parents && parents.map(c => `${c}.${prop}`) || [prop];
 
@@ -103,7 +99,8 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 				}
 			} else {
 				/** The current object has no circular reference - All okay! */
-				const proxyChain = createProxyChain<T>(sourceObject[prop], handlers, maps, parentChain);
+				const proxyChain = createProxyChain<T>(sourceObject[prop], handlers, maps, parentChains);
+
 				descriptors[prop].value = proxyChain;
 				parentChains.forEach(c => {
 					const currentValues = (all.get(proxyChain) || new Set<string>()).add(c);
@@ -166,4 +163,3 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 
 	return proxiedChain;
 }
-

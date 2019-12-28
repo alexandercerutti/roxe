@@ -54,6 +54,7 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 			/**
 			 * Current prop exists only in version (new prop).
 			 * We create a new props chain starting from prop in version.
+			 * version[prop] might not be an object
 			 */
 			parentChains.forEach(c => chains[c] = version[prop]);
 		} else if (!version[prop]) {
@@ -65,10 +66,10 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 		} else {
 			/**
 			 * Prop exists in both.
-			 * Oh shit.
+			 * Oh sh*t.
 			 */
 			if (typeof origin[prop] === typeof version[prop] && typeof origin[prop] === "object") {
-				const diffs = getObjectDiffs(origin[prop], version[prop], parentedProp);
+				const diffs = getObjectDiffs(origin[prop], version[prop], parentChains);
 
 				/**
 				 * If diffs is an empty object, no diff were
