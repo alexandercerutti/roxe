@@ -19,7 +19,7 @@ interface Observed {
 	[key: string]: Subject<any>
 }
 
-interface AnyKindOfObject {
+export interface AnyKindOfObject {
 	[key: string]: any;
 }
 
