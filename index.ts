@@ -1,6 +1,7 @@
 import { Subject, Subscription, Observable } from "rxjs";
 import * as debug from "debug";
 import { createProxyChain } from "./createProxyChain";
+import { getObjectDiffs } from "./getObjectDiffs";
 
 const roxeDebug = debug("roxe");
 const customTraps = Symbol("_customTraps");
@@ -67,10 +68,9 @@ class _ObservableObject<T> {
 				// along with the below keys (if the one that have been changed
 				// is an object)
 
-				// @ts-ignore - symbols can be used as index in js.
-				const propsChain = [...(obj[Symbol.for("__parent")] || []), prop];
-
-				const notificationChain = buildNotificationChain(obj[prop], value, ...propsChain);
+				const rawChains = Array.from(this[weakParents].get(receiver) || []);
+				const objectChains = !rawChains.length && [prop] || rawChains.map(c => `${c}.${prop}`);
+				const notificationChain = buildNotificationChain(obj[prop], value, ...objectChains);
 
 				if (typeof value === "object") {
 					if (this[customTraps].set && this[customTraps].set!(obj, prop, value, receiver) === false) {
@@ -93,7 +93,7 @@ class _ObservableObject<T> {
 					 * the original `handlers.set` clean from any external argument
 					 */
 
-					obj[prop] = createProxyChain(value, handlers, { all: this[weakParents] }, propsChain);
+					obj[prop] = createProxyChain(value, handlers, { all: this[weakParents] }, objectChains);
 				} else {
 					/*
 					 * We finalize the path of the keys passed in the above condition
@@ -118,7 +118,7 @@ class _ObservableObject<T> {
 					obj[prop] = value;
 				}
 
-				this.__fireNotifications(notificationChain);
+				this.__fireNotifications(notificationChain || {});
 				return true;
 			},
 			deleteProperty: (target: any, prop: string | number | symbol): boolean => {
@@ -256,145 +256,44 @@ export const ObservableObject: ObservableConstructor = _ObservableObject as any;
  * The function will compose an object { "x.y.z": value }
  * for each key of each nested object.
  * @param newValue - Current object
- * @param args
+ * @param chains
  */
 
-function buildNotificationChain(currentValue: any, newValue?: any, ...args: string[]): AnyKindOfObject | typeof newValue {
-	const parentsChain = args.join(".");
+function buildNotificationChain(currentValue: any, newValue: any, ...chains: string[]): AnyKindOfObject | typeof newValue {
+	let diffs: AnyKindOfObject;
 
 	if (typeof newValue === "object") {
 		/**
 		 * What changed in the new object
 		 * since current one?
 		 */
-		return getDiff(currentValue, newValue, parentsChain);
+		diffs = getObjectDiffs(currentValue, newValue, chains);
 	} else if (typeof newValue !== "object" && typeof currentValue === "object") {
 		/**
 		 * Opposite difference.
 		 * The result will be all the
 		 * currentValue's value keys set to undefined.
 		 */
-		return getDiff(currentValue, undefined, parentsChain);
+		diffs = getObjectDiffs(currentValue, newValue, chains);
 	} else {
 		/**
 		 * Nothing to iterate into. The only
 		 * notification to be fired is the one
-		 * of the single prop
+		 * of the single prop (for each access point)
 		 */
-		return { [parentsChain]: newValue };
-	}
-}
-
-/**
- * Obtains the keys/value difference in dot-notation
- * between two object
- *
- * @param source
- * @param different
- * @param parent
- */
-
-function getDiff(original: any, version: any, parents: string) {
-	const chain: AnyKindOfObject = {};
-
-	if (!original && !version) {
-		return chain;
+		return Object.assign(
+			{},
+			...chains.map(chain => ({ [chain]: newValue }))
+		);
 	}
 
-	if (!original || !version) {
-		return getValuedOrUndefinedDiffChain(original, version, parents);
-	}
-
-	const keysUnion = Array.from(
-		new Set([
-			...Object.keys(original|| {}),
-			...Object.keys(version || {})
-		])
-	);
-
-	for (let i = keysUnion.length, key; key = keysUnion[--i];) {
-		const keyWithParents = parents ? `${parents}.${key}` : key;
-		const isCurrentVersionKeyObject = typeof version === "object" && typeof version[key] === "object";
-		const isCurrentOriginalKeyObject = typeof original === "object" && typeof original[key] === "object";
-
-		if (original[key] && version[key]) {
-			if (typeof original[key] === typeof version[key]) {
-				if (isCurrentOriginalKeyObject) {
-					// If we get here, both oldValue and newValue are objects
-					Object.assign(chain, getDiff(original[key], version[key], keyWithParents));
-				}
-			} else {
-				if (isCurrentOriginalKeyObject) {
-					Object.assign(chain, objectToDiffChain(original[key], keyWithParents, true));
-				} else if (isCurrentVersionKeyObject) {
-					Object.assign(chain, objectToDiffChain(version[key], keyWithParents, false));
-				}
-			}
-
-			chain[keyWithParents] = version[key];
-		} else {
-			// If one is missing...
-			Object.assign(chain, getValuedOrUndefinedDiffChain(original[key], version[key], keyWithParents));
-		}
-	}
-
-	return chain;
-}
-
-/**
- * We select an object and iterate through it
- * to get all its properties (and nested ones)
- * in chain format a.b.c.
- *
- * If "allUndefined" is true, undefined is used
- * as value to all the keys. Otherwise their values are used.
- *
- * @param original
- * @param parents
- * @param allUndefined
- */
-
-function objectToDiffChain(original: AnyKindOfObject, parents: string, allUndefined: boolean = false) {
-	const chain: AnyKindOfObject = {};
-
-	const keys = Object.keys(original);
-	for (let i = keys.length, value; value = keys[--i];) {
-		const keyWithParents = parents ? `${parents}.${value}` : value;
-
-		if (typeof original[value] === "object") {
-			Object.assign(chain, objectToDiffChain(original[value], keyWithParents, allUndefined));
-		}
-
-		chain[keyWithParents] = !allUndefined ? original[value] : undefined;
-	}
-
-	return chain;
-}
-
-/**
- * If one of the two objects is missing,
- * we use the other one to create a diff
- * chain with the new value or undefined
- *
- * @param original
- * @param version
- * @param parents
- */
-
-function getValuedOrUndefinedDiffChain(original: any, version: any, parents: string) {
-	const chain: AnyKindOfObject = {};
-
-	chain[parents] = (!original && version) || undefined;
-
-	if (original && !version) {
-		if (typeof original === "object") {
-			Object.assign(chain, objectToDiffChain(original, parents, true));
-		}
-	} else {
-		if (typeof version === "object") {
-			Object.assign(chain, objectToDiffChain(version, parents, false));
-		}
-	}
-
-	return chain;
+	const diffKeys = Object.keys(diffs);
+	return diffKeys.reduce((acc, current) =>
+		Object.assign(
+			acc,
+			...chains.map(chain => ({
+				[`${chain}.${current}`]: diffs[current]
+			}))
+		)
+	, {} as { [key: string]: any });
 }
