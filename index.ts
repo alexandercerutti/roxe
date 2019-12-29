@@ -260,40 +260,34 @@ export const ObservableObject: ObservableConstructor = _ObservableObject as any;
  */
 
 function buildNotificationChain(currentValue: any, newValue: any, ...chains: string[]): AnyKindOfObject | typeof newValue {
-	let diffs: AnyKindOfObject;
+	let diffs: AnyKindOfObject = {};
 
-	if (typeof newValue === "object") {
+	if (typeof newValue === "object" || typeof newValue !== "object" && typeof currentValue === "object") {
 		/**
 		 * What changed in the new object
 		 * since current one?
 		 */
-		diffs = getObjectDiffs(currentValue, newValue, chains);
-	} else if (typeof newValue !== "object" && typeof currentValue === "object") {
-		/**
-		 * Opposite difference.
-		 * The result will be all the
-		 * currentValue's value keys set to undefined.
-		 */
-		diffs = getObjectDiffs(currentValue, newValue, chains);
-	} else {
-		/**
-		 * Nothing to iterate into. The only
-		 * notification to be fired is the one
-		 * of the single prop (for each access point)
-		 */
-		return Object.assign(
-			{},
-			...chains.map(chain => ({ [chain]: newValue }))
-		);
+		diffs = getObjectDiffs(currentValue, newValue);
 	}
 
+	/**
+	 * If diff is empty object, there's nothing
+	 * to iterate into. The only
+	 * notification to be fired is the one
+	 * of the single prop (for each access point)
+	 */
+
 	const diffKeys = Object.keys(diffs);
-	return diffKeys.reduce((acc, current) =>
-		Object.assign(
+	const prefixedDiffs = diffKeys.reduce((acc, current) => {
+		return Object.assign(
 			acc,
 			...chains.map(chain => ({
-				[`${chain}.${current}`]: diffs[current]
-			}))
+				[`${chain}.${current}`]: diffs[current],
+			})),
 		)
-	, {} as { [key: string]: any });
+	}, {} as { [key: string]: any });
+
+	chains.forEach(c => prefixedDiffs[c] = newValue);
+
+	return prefixedDiffs;
 }
