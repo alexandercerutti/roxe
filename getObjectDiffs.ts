@@ -104,8 +104,8 @@ export function getObjectDiffs(origin: any, version: any, parents: string[] = []
 				 * Here version is an object and origin is not.
 				 * We create a new prop chain from version[prop]
 				 */
-				 Object.assign(chains, createChainFromObject(version[prop], parentChains, false) || {});
-				 parentChains.forEach(c => chains[c] = version[prop]);
+				Object.assign(chains, createChainFromObject(version[prop], parentChains, false) || {});
+				parentChains.forEach(c => chains[c] = version[prop]);
 			} else if (version[prop] !== origin[prop]) {
 				/**
 				 * They have both type and value different.
