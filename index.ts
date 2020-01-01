@@ -136,15 +136,6 @@ class _ObservableObject<T> {
 	}
 
 	/**
-	 * Unsubscribes from all the subscriptions in a specific pool
-	 * @param subscriptions
-	 */
-
-	unsubscribeAll(subscriptions: Subscription[]): void {
-		subscriptions.forEach(sub => sub.unsubscribe());
-	}
-
-	/**
 	 * Returns the current image of a key of the main
 	 * object or a nested key.
 	 *
