@@ -12,34 +12,36 @@ import { getObjectDiffs } from "./getObjectDiffs";
  */
 
 export function buildNotificationChain(currentValue: any, newValue: any, ...chains: string[]): AnyKindOfObject | typeof newValue {
-	let diffs: AnyKindOfObject = {};
+	const diffs: AnyKindOfObject = Object.assign({}, ...chains.map(c => ({ [c]: newValue })));
 
 	if (typeof newValue === "object" || typeof newValue !== "object" && typeof currentValue === "object") {
 		/**
 		 * What changed in the new object
 		 * since current one?
 		 */
-		diffs = getObjectDiffs(currentValue, newValue);
+		Object.assign(diffs, withParent(getObjectDiffs(currentValue, newValue), chains));
 	}
 
-	/**
-	 * If diff is empty object, there's nothing
-	 * to iterate into. The only
-	 * notification to be fired is the one
-	 * of the single prop (for each access point)
-	 */
+	return diffs;
+}
 
+/**
+ * Iterates through diffs object keys and creates
+ * a new object with every key with parent prefix
+ *
+ * @param diffs
+ * @param parents
+ */
+
+function withParent(diffs: AnyKindOfObject, parents: string[]) {
 	const diffKeys = Object.keys(diffs);
-	const prefixedDiffs = diffKeys.reduce((acc, current) => {
+
+	return diffKeys.reduce((acc, current) => {
 		return Object.assign(
 			acc,
-			...chains.map(chain => ({
-				[`${chain}.${current}`]: diffs[current],
+			...parents.map(chain => ({
+				[`${chain}.${current}`]: diffs[current]
 			})),
-		)
-	}, {} as { [key: string]: any });
-
-	chains.forEach(c => prefixedDiffs[c] = newValue);
-
-	return prefixedDiffs;
+		);
+	}, {} as AnyKindOfObject);
 }
