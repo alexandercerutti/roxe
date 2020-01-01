@@ -43,7 +43,7 @@ describe("isUndefined to true", () => {
 			"x.y.z.d": undefined,
 		};
 
-		expect(createChainFromObject(testObject, ["x", "y", "z"], true)).toEqual(expectedObjectResult);
+		expect(createChainFromObject(testObject, ["x.y.z"], true)).toEqual(expectedObjectResult);
 	});
 
 	it("should return chains of undefined composed with parents, from a with two-levels-deep object", () => {
@@ -66,9 +66,17 @@ describe("isUndefined to true", () => {
 			"x.y.z.c.p": undefined,
 			"x.y.z.c.q": undefined,
 			"x.y.z.d": undefined,
+
+			"u.v.w.a": undefined,
+			"u.v.w.b": undefined,
+			"u.v.w.c": undefined,
+			"u.v.w.c.o": undefined,
+			"u.v.w.c.p": undefined,
+			"u.v.w.c.q": undefined,
+			"u.v.w.d": undefined,
 		};
 
-		expect(createChainFromObject(testObject, ["x", "y", "z"], true)).toEqual(expectedObjectResult);
+		expect(createChainFromObject(testObject, ["x.y.z", "u.v.w"], true)).toEqual(expectedObjectResult);
 	});
 });
 
@@ -106,7 +114,7 @@ describe("isUndefined to false or missing", () => {
 			"x.y.z.d": 8,
 		};
 
-		expect(createChainFromObject(testObject, ["x", "y", "z"])).toEqual(expectedObjectResult);
+		expect(createChainFromObject(testObject, ["x.y.z"])).toEqual(expectedObjectResult);
 	});
 
 	it("should return a chain with object values from a two-level-deep object and parents", () => {
@@ -129,8 +137,16 @@ describe("isUndefined to false or missing", () => {
 			"x.y.z.c.p": 3,
 			"x.y.z.c.q": 9,
 			"x.y.z.d": 8,
+
+			"u.v.w.a": 5,
+			"u.v.w.b": 6,
+			"u.v.w.c": { "o": 4, "p": 3, "q": 9 },
+			"u.v.w.c.o": 4,
+			"u.v.w.c.p": 3,
+			"u.v.w.c.q": 9,
+			"u.v.w.d": 8,
 		};
 
-		expect(createChainFromObject(testObject, ["x", "y", "z"])).toEqual(expectedObjectResult);
+		expect(createChainFromObject(testObject, ["x.y.z", "u.v.w"])).toEqual(expectedObjectResult);
 	});
 });
