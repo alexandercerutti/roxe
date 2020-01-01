@@ -1,10 +1,8 @@
 import { Subject, Subscription, Observable } from "rxjs";
-import * as debug from "debug";
 import { createProxyChain } from "./createProxyChain";
 import { buildNotificationChain } from "./buildNotificationChain";
 import { composeParentsChains } from "./composeParentsChain";
 
-const roxeDebug = debug("roxe");
 const customTraps = Symbol("_customTraps");
 const observedObjects = Symbol("_observedObjects");
 const weakParents = Symbol("wkp");
@@ -161,8 +159,6 @@ class _ObservableObject<T> {
 	 */
 
 	snapshot(path?: string): any {
-		let firstUnavailableKey: string = "";
-
 		if (!(path && typeof path === "string")) {
 			const snapshot = Object.assign({} as T, this);
 			// In the snapshot, we don't need the symbol that collects
@@ -174,20 +170,13 @@ class _ObservableObject<T> {
 
 		const snapshot = path.split(".").reduce((acc: AnyKindOfObject, current: string) => {
 			if (!(acc && typeof acc === "object" && !Array.isArray(acc) && current && (acc as Object).hasOwnProperty(current))) {
-				// if the previous iteration returns undefined,
+				// if the previous iteration returned undefined,
 				// we'll forward this until the end of the loop.
-				// We keep the first unavailable key for debug.
-				firstUnavailableKey = firstUnavailableKey || current;
 				return undefined;
 			}
 
 			return acc[current];
 		}, this);
-
-		if (snapshot === undefined) {
-			roxeDebug(`Cannot access to path "${path}". "${firstUnavailableKey}" is not reachable`);
-			return snapshot;
-		}
 
 		if (typeof snapshot === "object") {
 			return Object.assign({}, snapshot);
