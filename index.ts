@@ -13,7 +13,7 @@ export type WKP = WeakMap<AnyKindOfObject, Set<string>>;
 
 export type ObservableObject<T> = _ObservableObject<T> & T;
 interface ObservableConstructor {
-	new<T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObject<T>;
+	new <T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObject<T>;
 }
 
 interface Observed {
@@ -44,31 +44,25 @@ class _ObservableObject<T> {
 				enumerable: false,
 			},
 			[weakParents]: {
-				value: (new WeakMap() as WKP),
+				value: new WeakMap() as WKP,
 				writable: false,
 				configurable: false,
 				enumerable: false
 			}
 		});
 
-		if (optHandlers) {
-			if (optHandlers.set) {
-				this[customTraps].set = optHandlers.set;
-				delete optHandlers.set;
-			}
+		if (optHandlers.set) {
+			this[customTraps].set = optHandlers.set;
+			delete optHandlers.set;
+		}
 
-			if (optHandlers.deleteProperty) {
-				this[customTraps].deleteProperty = optHandlers.deleteProperty;
-				delete optHandlers.deleteProperty;
-			}
+		if (optHandlers.deleteProperty) {
+			this[customTraps].deleteProperty = optHandlers.deleteProperty;
+			delete optHandlers.deleteProperty;
 		}
 
 		const handlers = Object.assign(optHandlers, {
 			set: (obj: AnyKindOfObject, prop: string | number, value: any, receiver?: any): boolean => {
-				// Notification will have the current property
-				// along with the below keys (if the one that have been changed
-				// is an object)
-
 				const rawChains = Array.from(this[weakParents].get(receiver) || []);
 				const objectChains = composeParentsChains(prop, rawChains);
 				const notificationChain = buildNotificationChain(obj[prop], value, ...objectChains);
@@ -78,20 +72,13 @@ class _ObservableObject<T> {
 						return false;
 					}
 
-					/*
-					 * We when we set a property which will be an object
-					 * we set it as a Proxy. Each new proxy will have a
-					 * Symbol-property "parent" that will include all the
-					 * parents names to reach that specific object.
-					 *
-					 * E.g. if we have an object structure like x.y.z.w
-					 * x, x.y and x.y.z will be Proxies; each property
-					 * will receive a setter with the parent keys.
-					 * w property, will receive below (in else),
-					 * ["x", "y", "z"] as args.
-					 *
-					 * We have to copy handlers to a new object to keep
-					 * the original `handlers.set` clean from any external argument
+					/**
+					 * When a property is set with an Object, we
+					 * create for it a Proxy-chain (itself included).
+					 * Each object will have a record in the root object
+					 * weakMap, so we can easily access to the chains
+					 * to reach that object (and to create notifications).
+					 * Each chain is composed like "a.b.c".
 					 */
 
 					obj[prop] = createProxyChain(value, handlers, { all: this[weakParents] }, objectChains);
