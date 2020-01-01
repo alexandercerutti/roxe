@@ -59,7 +59,7 @@ describe("Registration and changes observation:", () => {
 		});
 
 		oo.b.d!.e = 5;
-	});
+	}, 5000);
 
 	it("Unsubscribed object should not receive any update", () => {
 		const observed = oo.observe("b.d.e");
@@ -74,7 +74,7 @@ describe("Registration and changes observation:", () => {
 		subscription.unsubscribe();
 
 		oo.b.d!.e = 42;
-	});
+	}, 5000);
 
 	it("Deleting a property should create notifications", () => {
 		oo.observe("b.d.f.g").subscribe({
@@ -86,7 +86,7 @@ describe("Registration and changes observation:", () => {
 		});
 
 		delete oo.b.d!.f;
-	})
+	}, 5000);
 });
 
 describe("Custom Proxy handler:", () => {
@@ -143,40 +143,35 @@ describe("Snapshot:", () => {
 	});
 
 	it("Should return a full snapshot of the structure", () => {
-		expect(
-			compareObjects(
-				{
-					a: 1,
-					b: {
-						c: 2,
-						d: {
-							e: 3,
-							f: {
-								g: 4,
-								h: {
-									i: 5,
-								}
-							}
+		const expectedResult = {
+			a: 1,
+			b: {
+				c: 2,
+				d: {
+					e: 3,
+					f: {
+						g: 4,
+						h: {
+							i: 5,
 						}
 					}
-				},
-				oo.snapshot()
-			)
-		).toBe(true);
+				}
+			}
+		};
+
+		expect(oo.snapshot()).toEqual(expectedResult);
 	});
 
 	it("Should take a partial snapshot (object) of the main object", () => {
-		expect(
-			compareObjects(
-				{
-					g: 4,
-					h: {
-						i: 5,
-					}
-				},
-				oo.snapshot("b.d.f")
-			)
-		).toBe(true);
+
+		const expectedResult = {
+			g: 4,
+			h: {
+				i: 5,
+			}
+		};
+
+		expect(oo.snapshot("b.d.f")).toEqual(expectedResult);
 	});
 
 	it("Should take a partial snapshot (value) of the main object", () => {
@@ -187,13 +182,3 @@ describe("Snapshot:", () => {
 		expect(oo.snapshot("b.d.h")).toBe(undefined);
 	});
 });
-
-function compareObjects(obj1: any, obj2: any): boolean {
-	return Object.keys(obj1).every(key => {
-		if (obj2[key] && typeof obj1[key] === "object") {
-			return compareObjects(obj1[key], obj2[key]);
-		}
-
-		return obj2[key] === obj1[key];
-	});
-}
