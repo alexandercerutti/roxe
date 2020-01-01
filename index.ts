@@ -9,11 +9,6 @@ const weakParents = Symbol("wkp");
 
 export type WKP = WeakMap<AnyKindOfObject, Set<string>>;
 
-export type ObservableObject<T> = _ObservableObject<T> & T;
-interface ObservableConstructor {
-	new <T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObject<T>;
-}
-
 interface Observed {
 	[key: string]: Subject<any>
 }
@@ -184,6 +179,12 @@ class _ObservableObject<T> {
 
 		return snapshot;
 	}
+}
+
+export type ObservableObject<T> = _ObservableObject<T> & T;
+
+interface ObservableConstructor {
+	new <T>(from: T, optHandlers?: ProxyHandler<any>): ObservableObject<T>;
 }
 
 // Workaround to allow us to recognize T's props as part of ObservableObject
