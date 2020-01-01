@@ -1,4 +1,5 @@
 import { AnyKindOfObject } from ".";
+import { composeParentsChains } from "./composeParentsChain";
 
 interface ChainMaps<T extends Object = any> {
 	seen?: WeakMap<T, SourceDetails>;
@@ -30,7 +31,7 @@ interface AwaitingCircularReference {
  * @param parent The parent that has
  */
 
-export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, handlers: ProxyHandler<any>, maps: ChainMaps, parents?: string[]) {
+export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, handlers: ProxyHandler<any>, maps: ChainMaps, parents: string[] = []) {
 	if (!maps.seen) {
 		maps.seen = new WeakMap<T, SourceDetails>();
 	}
@@ -59,7 +60,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 
 	for (let i = targetObjectKeys.length, prop: string; prop = targetObjectKeys[--i];) {
 		if (sourceObject[prop] && typeof sourceObject[prop] === "object") {
-			const parentChains = parents && parents.map(c => `${c}.${prop}`) || [prop];
+			const parentChains = composeParentsChains(prop, parents);
 
 			if (seen.has(sourceObject[prop])) {
 				const { proxy } = seen.get(sourceObject[prop]) || {} as Partial<SourceDetails>;

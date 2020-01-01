@@ -1,4 +1,5 @@
 import { AnyKindOfObject } from ".";
+import { composeParentsChains } from "./composeParentsChain";
 
 /**
  * Returns a notification object with
@@ -9,7 +10,7 @@ import { AnyKindOfObject } from ".";
  * @param parents Optional parents
  */
 
-export function createChainFromObject(obj: AnyKindOfObject, parents?: string[], isUndefined: boolean = false) {
+export function createChainFromObject(obj: AnyKindOfObject, parents: string[] = [], isUndefined: boolean = false) {
 	if (!obj) {
 		return undefined;
 	}
@@ -22,7 +23,7 @@ export function createChainFromObject(obj: AnyKindOfObject, parents?: string[], 
 	}
 
 	for (let i = objKeys.length, prop: string; prop = objKeys[--i];) {
-		const parentChains = parents && parents.map(c => `${c}.${prop}`) || [prop];
+		const parentChains = composeParentsChains(prop, parents);
 
 		if (typeof obj[prop] === "object") {
 			Object.assign(

@@ -1,5 +1,6 @@
 import { createChainFromObject } from "./createChainsFromObject";
 import { AnyKindOfObject } from ".";
+import { composeParentsChains } from "./composeParentsChain";
 
 /**
  * Creates a new object with the differences among
@@ -11,7 +12,7 @@ import { AnyKindOfObject } from ".";
  * @param parents
  */
 
-export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
+export function getObjectDiffs(origin: any, version: any, parents: string[] = []) {
 	if (!(origin || version) || origin === version) {
 		return {};
 	}
@@ -48,7 +49,7 @@ export function getObjectDiffs(origin: any, version: any, parents?: string[]) {
 	);
 
 	for (let i = targetObjectKeys.length, prop: string; prop = targetObjectKeys[--i];) {
-		const parentChains = parents && parents.map(c => `${c}.${prop}`) || [prop];
+		const parentChains = composeParentsChains(prop, parents);
 
 		if (!origin[prop]) {
 			/**

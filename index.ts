@@ -2,6 +2,7 @@ import { Subject, Subscription, Observable } from "rxjs";
 import * as debug from "debug";
 import { createProxyChain } from "./createProxyChain";
 import { buildNotificationChain } from "./buildNotificationChain";
+import { composeParentsChains } from "./composeParentsChain";
 
 const roxeDebug = debug("roxe");
 const customTraps = Symbol("_customTraps");
@@ -63,13 +64,13 @@ class _ObservableObject<T> {
 		}
 
 		const handlers = Object.assign(optHandlers, {
-			set: (obj: AnyKindOfObject, prop: string, value: any, receiver?: any): boolean => {
+			set: (obj: AnyKindOfObject, prop: string | number, value: any, receiver?: any): boolean => {
 				// Notification will have the current property
 				// along with the below keys (if the one that have been changed
 				// is an object)
 
 				const rawChains = Array.from(this[weakParents].get(receiver) || []);
-				const objectChains = !rawChains.length && [prop] || rawChains.map(c => `${c}.${prop}`);
+				const objectChains = composeParentsChains(prop, rawChains);
 				const notificationChain = buildNotificationChain(obj[prop], value, ...objectChains);
 
 				if (typeof value === "object") {
