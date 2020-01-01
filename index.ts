@@ -53,12 +53,10 @@ class _ObservableObject<T> {
 
 		if (optHandlers.set) {
 			this[customTraps].set = optHandlers.set;
-			delete optHandlers.set;
 		}
 
 		if (optHandlers.deleteProperty) {
 			this[customTraps].deleteProperty = optHandlers.deleteProperty;
-			delete optHandlers.deleteProperty;
 		}
 
 		const handlers = Object.assign(optHandlers, {
