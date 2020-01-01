@@ -102,7 +102,7 @@ class _ObservableObject<T> {
 					obj[prop] = value;
 				}
 
-				this.__fireNotifications(notificationChain || {});
+				fireNotifications(this, notificationChain || {});
 				return true;
 			},
 			deleteProperty: (target: any, prop: string | number): boolean => {
@@ -114,7 +114,7 @@ class _ObservableObject<T> {
 				const deleted = Boolean((this[customTraps].deleteProperty || Reflect.deleteProperty)(target, prop));
 
 				if (deleted) {
-					this.__fireNotifications(notificationChain);
+					fireNotifications(this, notificationChain);
 				}
 
 				return deleted;
@@ -184,28 +184,28 @@ class _ObservableObject<T> {
 
 		return snapshot;
 	}
-
-	/**
-	 * Calls next on RxJS Subject
-	 * with the current value
-	 * for each element in the chain
-	 * @param notificationChain
-	 * @private
-	 */
-
-	private __fireNotifications(notificationChain: AnyKindOfObject): void {
-		const keys = Object.keys(notificationChain);
-		for (let i = keys.length; i > 0;) {
-			const key = keys[--i];
-			const value = notificationChain[key];
-
-			if (this[observedObjects][key]) {
-				this[observedObjects][key].next(value);
-			}
-		}
-	}
 }
 
 // Workaround to allow us to recognize T's props as part of ObservableObject
 // https://stackoverflow.com/a/54737176/2929433
 export const ObservableObject: ObservableConstructor = _ObservableObject as any;
+
+/**
+ * Calls next on RxJS Subject
+ * with the current value
+ * for each element in the chain
+ * @param notificationChain
+ * @private
+ */
+
+function fireNotifications(self: ObservableObject<any>, notificationChain: AnyKindOfObject): void {
+	const keys = Object.keys(notificationChain);
+	for (let i = keys.length; i > 0;) {
+		const key = keys[--i];
+		const value = notificationChain[key];
+
+		if (self[observedObjects][key]) {
+			self[observedObjects][key].next(value);
+		}
+	}
+}
