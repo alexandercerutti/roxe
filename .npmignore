@@ -1,11 +1,15 @@
 .vscode/
-tests/
+spec/
 tsconfig.json
-test.js
 *.ts
 !*.d.ts
 test.d.ts
 .DS_Store
-spec/*.d.ts
 *.map
 umd/
+
+*.js
+!src/**/*.js
+
+# Because model.js will be an empty object
+src/model.js
