@@ -163,7 +163,6 @@ describe("Snapshot:", () => {
 	});
 
 	it("Should take a partial snapshot (object) of the main object", () => {
-
 		const expectedResult = {
 			g: 4,
 			h: {

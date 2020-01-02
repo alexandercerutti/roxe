@@ -147,11 +147,7 @@ class _ObservableObject<T> {
 	snapshot(path?: string): any {
 		if (!(path && typeof path === "string")) {
 			const snapshot = Object.assign({} as T, this);
-			// In the snapshot, we don't need the symbol that collects
-			// All the observers
-			delete snapshot[observedObjects];
-			delete snapshot[customTraps];
-			return snapshot;
+			return withoutProxy(snapshot);
 		}
 
 		const snapshot = path.split(".").reduce((acc: AnyKindOfObject, current: string) => {
@@ -165,7 +161,7 @@ class _ObservableObject<T> {
 		}, this);
 
 		if (typeof snapshot === "object") {
-			return Object.assign({}, snapshot);
+			return Object.assign({}, withoutProxy(snapshot));
 		}
 
 		return snapshot;
@@ -200,4 +196,29 @@ function fireNotifications(self: ObservableObject<any>, notificationChain: AnyKi
 			self[observedObjects][key].next(value);
 		}
 	}
+}
+
+/**
+ * Iterates through a Proxy object chain and composes
+ * a new object without proxy handler
+ * @param object
+ */
+
+function withoutProxy(object: AnyKindOfObject) {
+	if (typeof object !== "object") {
+		return object;
+	}
+
+	const objectKeys = Object.keys(object);
+	const finalObject: typeof object = {};
+
+	for (let i = objectKeys.length, prop: string; prop = objectKeys[--i];) {
+		if (typeof object[prop] === "object") {
+			Object.assign(finalObject, object, { [prop]: withoutProxy(object[prop]) });
+		} else {
+			finalObject[prop] = object[prop];
+		}
+	}
+
+	return finalObject;
 }
