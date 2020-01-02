@@ -1,5 +1,5 @@
-import { AnyKindOfObject } from ".";
 import { composeParentsChains } from "./composeParentsChain";
+import { AnyKindOfObject } from "./model";
 
 interface ChainMaps<T extends Object = any> {
 	seen?: WeakMap<T, SourceDetails>;
@@ -131,7 +131,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	 * the new created proxy chain
 	 */
 
-	for (let i=circularReferences.length, cr; cr=circularReferences[--i];) {
+	for (let i = circularReferences.length, cr; cr = circularReferences[--i];) {
 		const { prop, parent } = cr;
 		const { proxy, aliases } = seen.get(parent[prop]) || {} as Partial<SourceDetails>;
 
@@ -151,7 +151,7 @@ export function createProxyChain<T extends AnyKindOfObject>(sourceObject: T, han
 	const { aliases } = seen.get(sourceObject) || {} as Partial<SourceDetails>;
 
 	if (aliases && aliases.length) {
-		for (let i=aliases.length, alias; alias=aliases[--i];) {
+		for (let i = aliases.length, alias; alias = aliases[--i];) {
 			const { parent, aliasName } = alias;
 			parent[aliasName] = proxiedChain;
 		}

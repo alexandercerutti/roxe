@@ -1,4 +1,4 @@
-import { getObjectDiffs } from "../getObjectDiffs";
+import { getObjectDiffs } from "../src/getObjectDiffs";
 
 describe("Generic objects diffs", () => {
 	it("Should return empty object if nothing if available", () => {
@@ -26,11 +26,11 @@ describe("should return an object of chains if one of two params is not availabl
 			};
 		});
 
-		it("Origin is empty object",() => {
+		it("Origin is empty object", () => {
 			const chain = getObjectDiffs({}, version);
 
 			expect(chain!.a).toBe(1);
-			expect(chain!.d).toEqual({ e: 5, f: 6, g: { h: 8 }});
+			expect(chain!.d).toEqual({ e: 5, f: 6, g: { h: 8 } });
 			expect(chain!["d.e"]).toBe(5);
 			expect(chain!["d.g.h"]).toBe(8);
 		});
@@ -39,16 +39,16 @@ describe("should return an object of chains if one of two params is not availabl
 			const chain = getObjectDiffs(null, version);
 
 			expect(chain!.a).toBe(1);
-			expect(chain!.d).toEqual({ e: 5, f: 6, g: { h: 8 }});
+			expect(chain!.d).toEqual({ e: 5, f: 6, g: { h: 8 } });
 			expect(chain!["d.e"]).toBe(5);
 			expect(chain!["d.g.h"]).toBe(8);
 		});
 
-		it("Origin is undefined",() => {
+		it("Origin is undefined", () => {
 			const chain = getObjectDiffs(undefined, version);
 
 			expect(chain!.a).toBe(1);
-			expect(chain!.d).toEqual({ e: 5, f: 6, g: { h: 8 }});
+			expect(chain!.d).toEqual({ e: 5, f: 6, g: { h: 8 } });
 			expect(chain!["d.e"]).toBe(5);
 			expect(chain!["d.g.h"]).toBe(8);
 		});
@@ -71,7 +71,7 @@ describe("should return an object of chains if one of two params is not availabl
 			};
 		});
 
-		it("Version is empty object",() => {
+		it("Version is empty object", () => {
 			const chain = getObjectDiffs(origin, {});
 
 			expect(chain!.a).toBe(undefined);
@@ -89,7 +89,7 @@ describe("should return an object of chains if one of two params is not availabl
 			expect(chain!["d.g.h"]).toBe(undefined);
 		});
 
-		it("Version is undefined",() => {
+		it("Version is undefined", () => {
 			const chain = getObjectDiffs(origin, undefined);
 
 			expect(chain!.a).toBe(undefined);

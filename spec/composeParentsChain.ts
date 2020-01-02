@@ -1,4 +1,4 @@
-import { composeParentsChains } from "../composeParentsChain";
+import { composeParentsChains } from "../src/composeParentsChain";
 
 it("Returns an array with one prop if none is passed as parents", () => {
 	const result = composeParentsChains('a', []);

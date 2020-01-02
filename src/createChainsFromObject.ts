@@ -1,5 +1,5 @@
-import { AnyKindOfObject } from ".";
 import { composeParentsChains } from "./composeParentsChain";
+import { AnyKindOfObject } from "./model";
 
 /**
  * Returns a notification object with

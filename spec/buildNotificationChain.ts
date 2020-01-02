@@ -1,4 +1,4 @@
-import { buildNotificationChain } from "../buildNotificationChain";
+import { buildNotificationChain } from "../src/buildNotificationChain";
 
 it(`Should return a chain object if both are objects and not the same.
 Unavailable old object keys in new object, will be undefined.`, () => {

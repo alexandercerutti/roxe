@@ -1,5 +1,5 @@
-import { AnyKindOfObject } from ".";
 import { getObjectDiffs } from "./getObjectDiffs";
+import { AnyKindOfObject } from "./model";
 
 /**
  * Builds the chain of properties that will be notified.

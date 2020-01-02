@@ -1,13 +1,13 @@
-import { createProxyChain } from "../createProxyChain";
-import { AnyKindOfObject } from "..";
+import { createProxyChain } from "../src/createProxyChain";
+import { AnyKindOfObject } from "../src/model";
 
 describe("Objects", () => {
 	it("should return a Proxy from an Array", () => {
 		const all = new WeakMap();
-		const arrayProxy = createProxyChain([9,8,7,6,5], {}, { all });
+		const arrayProxy = createProxyChain([9, 8, 7, 6, 5], {}, { all });
 
 		expect(arrayProxy!.hasOwnProperty("length")).toBeTruthy();
-        expect(arrayProxy!.length).toBe(5);
+		expect(arrayProxy!.length).toBe(5);
 		expect(Object.getPrototypeOf(arrayProxy)).toEqual(Array.prototype);
 	});
 
@@ -19,7 +19,7 @@ describe("Objects", () => {
 				d: 4,
 				f: 5,
 				g: 6, // Like a G6
-				h: [1.1,1.2,1.3],
+				h: [1.1, 1.2, 1.3],
 			}
 		};
 

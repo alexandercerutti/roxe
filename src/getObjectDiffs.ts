@@ -1,6 +1,6 @@
 import { createChainFromObject } from "./createChainsFromObject";
-import { AnyKindOfObject } from ".";
 import { composeParentsChains } from "./composeParentsChain";
+import { AnyKindOfObject } from "./model";
 
 /**
  * Creates a new object with the differences among

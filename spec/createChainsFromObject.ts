@@ -1,4 +1,4 @@
-import { createChainFromObject } from "../createChainsFromObject";
+import { createChainFromObject } from "../src/createChainsFromObject";
 
 describe("Falsy object", () => {
 	it("should return undefined", () => {
