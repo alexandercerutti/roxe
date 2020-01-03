@@ -16,7 +16,7 @@ export function createChainFromObject(obj: AnyKindOfObject, parents: string[] = 
 	}
 
 	const chains: AnyKindOfObject = {};
-	const objKeys = Object.keys(obj);
+	const objKeys = Object.keys(Object.getOwnPropertyDescriptors(obj));
 
 	if (!objKeys.length) {
 		return undefined;
