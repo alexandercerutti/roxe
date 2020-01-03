@@ -10,8 +10,16 @@ It merges the powerfulness of RxJS and ES Proxies to let developers subscribe to
 
 ___
 
+## Looking for previous version?
 
-### Install
+Check [v1.0.9 branch](https://github.com/alexandercerutti/roxe/tree/1.0.9). That branch is kept for reference only.
+
+<br>
+
+___
+
+
+## Install
 
 ```sh
 $ npm install --save roxe
@@ -20,7 +28,7 @@ $ npm install --save roxe
 <br>
 <hr>
 
-### Usage example
+## Usage example
 
 In this usage example, I'm supposing you are using Typescript to show you the real force of this package.
 
@@ -221,7 +229,7 @@ ___
 
 <a name="customtraps"></a>
 
-### Defining custom traps
+## Defining custom traps
 
 This package has been built with in mind the possibility to be extendable as much as possible.
 In fact, observable object's constructor allows custom proxy handlers to be passed. Traps will be applied to all the nested objects.
@@ -235,7 +243,7 @@ If a custom `deleteProperty` returns **false**, notifications won't be executed 
 > Be sure to not overload the traps, or your application performance may have affected.
 
 ___
-### Testing
+## Testing
 
 Some tests based on Jasmine, are available to be executed to show how this package works.
 
@@ -245,7 +253,7 @@ $ npm test
 ```
 
 ___
-### Caveats
+## Caveats
 
 This project compiles to a `CommonJS` module as the original project this comes from (see below), used Webpack, which does not digest `UMD` modules (using some loaders was breaking the debugging process for some reasons). If you'll need to get the UMD version, an npm script to achieve this has been made available. Follow the script below:
 
@@ -262,7 +270,7 @@ Another caveat is about the weight of this package. To be powerful, this package
 So, even if this library weights few KBs, Rx.JS contributes a lot to the general weight. This package might be considered as an extension for RxJS, but it won't have RxJS as `peerDependency` to allow everyone to use it in every context.
 
 ___
-### Credits ⭐
+## Credits ⭐
 
 This small package is a fork of a package, created by me, while working at [IdeaSolutions S.r.l.](http://www.ideasolutions.it/), an Italian company based in Naples, Italy. A great company to work for.
 
